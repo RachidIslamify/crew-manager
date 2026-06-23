@@ -26,6 +26,7 @@ const TRAIN_MS      = 6 * 3600 * 1000;   // 6 uur
 const TRAIN_GAIN      = 3;                // +3 op de stat per sessie
 const TRAIN_COND_COST = 3;                // −3 conditie per afgeronde sessieconst STAT_CAP      = 99;
 const SLOTS_TOTAL   = 6;
+const STAT_CAP        = 99;
 const SLOTS_PER_STAT = 2;
 const STATS = ["p", "d", "s"] as const;
 type Stat = typeof STATS[number];
