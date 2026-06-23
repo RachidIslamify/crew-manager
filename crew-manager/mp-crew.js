@@ -112,6 +112,70 @@
     return '<div class="b-slot empty" data-drop="bench:' + i + '">Empty bench slot</div>';
   }
 
+  function shipStripHtml(d){
+    var ship = d.ship || { shipTier: 1, tierName: "Dinghy" };
+    var atMax = (ship.shipTier >= 3);
+    var upgBtn = atMax
+      ? '<span class="cw-ship-max">Max tier</span>'
+      : '<button class="cw-ship-upg" id="cw-ship-upg" type="button">\u2B06 Upgrade</button>';
+    return '<div class="cw-ship">' +
+        '<span class="cw-ship-pip">\u26F5</span>' +
+        '<span class="cw-ship-meta"><b>Ship &middot; Tier ' + ship.shipTier + '</b><i>' + esc(ship.tierName) + '</i></span>' +
+        '<span class="cw-ship-sp"></span>' +
+        upgBtn +
+      '</div>';
+  }
+
+// tier-info voor de bevestiging (moet matchen met server/src/config/shipTiers.ts)
+  var NEXT_TIER = {
+    2: { name: "Caravel",     cap: 7,  price: 10000000 },
+    3: { name: "Yonko-class", cap: 13, price: 30000000 },
+  };
+  var SHIPWRIGHT_DISCOUNT = 0.30;
+
+  function crewHasShipwright(){
+    return (C.data && Array.isArray(C.data.squad) && C.data.squad.some(function (m){
+      return m.role === "Shipwright" || (Array.isArray(m.altRoles) && m.altRoles.indexOf("Shipwright") >= 0);
+    }));
+  }
+  function berries(n){ return "\u0E3F " + n.toLocaleString("en-US"); }
+
+  function doUpgrade(){
+    var cur = (C.data && C.data.ship && C.data.ship.shipTier) || 1;
+    var to  = cur + 1;
+    var info = NEXT_TIER[to];
+    if (!info) return;
+
+    var hasSW = crewHasShipwright();
+    var price = hasSW ? Math.round(info.price * (1 - SHIPWRIGHT_DISCOUNT)) : info.price;
+
+    var msg = "Upgrade to " + info.name + " (crew up to " + (info.cap + 1) + ") for " + berries(price) + ".";
+    if (hasSW) msg += "\nShipwright aboard: \u221230% (was " + berries(info.price) + ").";
+
+    if (typeof openModal !== "function"){ confirmUpgrade(); return; }   // fallback
+    openModal({
+      title: "Upgrade ship",
+      message: msg,
+      confirmLabel: "Upgrade",
+      danger: false,
+      showCancel: true,
+      onConfirm: confirmUpgrade,
+    });
+  }
+
+  async function confirmUpgrade(){
+    var btn = el("cw-ship-upg");
+    if (btn) btn.disabled = true;
+    try {
+      var r = await Api.upgradeShip(C.id);
+      toast(r.discounted ? "Ship upgraded \u2014 Shipwright discount applied!" : "Ship upgraded!");
+      await load();   // herlaadt crew + schip + nieuwe cap
+    } catch (e){
+      toast(e.message || "Upgrade failed");
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function render(){
     var d = C.data;
     var roster = d.squad || [];
@@ -127,10 +191,11 @@
       '<div class="cw-top">' +
         '<div class="cw-id"><div class="cw-av" style="background:' + col(d.captain) + '">' + ini(d.captain) + '</div>' +
           '<div><div class="cw-crew">' + esc(d.crewName) + '</div><div class="cw-cap">Captain ' + esc(d.captain) + '</div></div></div>' +
-        '<div class="cw-bal">' + mini("Bounty", short(totalBounty())) + mini("Crew", roster.length + " / " + (d.rosterCap || 13)) + '</div>' +
-        '<button class="cw-bag" id="cw-bag" type="button" aria-label="Open inventory" title="Open your backpack">' + BAG_ICON + '<span>Backpack</span></button>' +
+            '<div class="cw-bal">' + mini("Bounty", short(totalBounty())) + mini("Crew", (roster.length + 1) + " / " + ((d.rosterCap || 13) + 1)) + '</div>' +
+        '<button class="cw-bag" id="cw-bag" type="button" aria-label="Open inventory" title="Open your backpack">' + BAG_ICON + '</button>' +
         '<button class="btn-ghost cw-back" id="cw-back" type="button">Back</button>' +
       '</div>' +
+      shipStripHtml(d) +
       '<div class="cw-main">' +
         '<div class="ship-col">' + SHIP +
           '<span class="dir" style="top:-2px">&#9650; Bow</span><span class="dir" style="bottom:-4px">Stern / Wheel</span>' +
@@ -147,6 +212,8 @@
       if (typeof window.cmOpenInventory === "function") window.cmOpenInventory(C.id);
       else toast("Inventory is not available yet");
     });
+    var upg = el("cw-ship-upg");
+    if (upg) upg.addEventListener("click", doUpgrade);
     content().querySelectorAll("[data-drag]").forEach(function (e){ e.addEventListener("pointerdown", onDragStart); });
   }
 

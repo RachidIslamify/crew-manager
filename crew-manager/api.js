@@ -93,10 +93,15 @@ const Api = {
   startTraining(id, name, stat){ return apiFetch("/api/online/leagues/" + id + "/training/start", { method: "POST", body: JSON.stringify({ name: name, stat: stat }) }); },
   cancelTraining(id, name){ return apiFetch("/api/online/leagues/" + id + "/training/cancel", { method: "POST", body: JSON.stringify({ name: name }) }); },
 
-  // ---- Multiplayer: opstelling (dek + bank) ----
+// ---- Multiplayer: opstelling (dek + bank) ----
   getLineup(id){ return apiFetch("/api/online/leagues/" + id + "/lineup"); },
   saveLineup(id, lineup){ return apiFetch("/api/online/leagues/" + id + "/lineup", { method: "POST", body: JSON.stringify({ lineup: lineup }) }); },
 
+  // ---- Multiplayer: schip (tiers + cosmetics) ----
+  getShip(worldId){ return apiFetch("/api/online/ship?worldId=" + encodeURIComponent(worldId)); },
+  upgradeShip(worldId){ return apiFetch("/api/online/ship/upgrade", { method: "POST", body: JSON.stringify({ worldId: worldId }) }); },
+  saveCosmetics(worldId, changes){ return apiFetch("/api/online/ship/cosmetics", { method: "POST", body: JSON.stringify({ worldId: worldId, changes: changes }) }); },
+  
   // ---- Multiplayer: speeldag terugkijken ----
   getMatch(id, day){ return apiFetch("/api/online/leagues/" + id + "/match" + (day ? ("?day=" + encodeURIComponent(day)) : "")); },
 

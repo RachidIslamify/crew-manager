@@ -15,6 +15,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "./prisma";
 import { bumpMissions } from "./missions";
+import { SHIP_TIERS, rosterCapForTier } from "./config/shipTiers";
 
 const DECK_ROLES = ["Swordsman", "Sniper", "Chef", "Doctor", "Archaeologist",
                     "Shipwright", "Musician", "Navigator", "Helmsman"];
@@ -80,7 +81,14 @@ router.get("/leagues/:id/lineup", async (req: Request, res: Response) => {
     res.json({
       crewName: me.crewName, captain: me.captain,
       captainStats: { p: me.capP, d: me.capD, s: me.capS, cond: me.capCond },
-      rosterCap: 13,
+      rosterCap: rosterCapForTier(me.shipTier),
+      ship: {
+        shipTier: me.shipTier,
+        tierName: SHIP_TIERS[(me.shipTier as 1|2|3)]?.name ?? SHIP_TIERS[1].name,
+        rosterCap: rosterCapForTier(me.shipTier),
+        hullColor: me.hullColor, deckColor: me.deckColor, sailColor: me.sailColor,
+        trimColor: me.trimColor, jollyRoger: me.jollyRoger, figurehead: me.figurehead,
+      },
       squad: me.squad.map(s => ({ name: s.name, role: s.role, altRoles: s.altRoles, p: s.p, d: s.d, s: s.s, cond: s.cond })),
       lineup,
     });

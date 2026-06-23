@@ -16,11 +16,14 @@
      hetzelfde lid kunnen kopen (de koop claimt de rij atomair).
    - "listedDay" is tevens "beschikbaar-vanaf-dag": een afgekoeld lid wordt
      geparkeerd met listedDay in de toekomst en komt sterker terug.
+   - Roster-cap voor SPELERS volgt de schip-tier (rosterCapForTier). Bots
+     houden hun eigen vaste bovengrens (ROSTER_CAP) — zij kennen geen schepen.
    ==================================================================== */
 
 import { Router, Request, Response } from "express";
 import { prisma } from "./prisma";
 import { bumpMissions } from "./missions";
+import { rosterCapForTier } from "./config/shipTiers";
 
 /* ---- characterpool (zelfde loader als online.ts) ---- */
 const pd: any = require("../../crew-manager/data-pirates.js");
@@ -37,7 +40,7 @@ function uid(req: Request): string {
 const STAT_CAP          = 99;
 const STAT_FLOOR        = 2;
 const MEMBER_START_SCALE = 0.62;     // recruits enter below their data potential
-const ROSTER_CAP        = 13;        // crew members (captain is separate)
+const ROSTER_CAP        = 13;        // BOT-bovengrens (spelers volgen de schip-tier)
 const MARKET_SIZE       = 12;        // visible listings on the board at once
 
 const TENURE_MIN        = 2;         // days a listing stays before it cycles off
@@ -298,7 +301,7 @@ router.get("/leagues/:id/market", async (req: Request, res: Response) => {
       day,
       funds: me?.funds ?? 0,
       crewSize: me ? await prisma.squadMember.count({ where: { membershipId: me.id } }) : 0,
-      rosterCap: ROSTER_CAP,
+      rosterCap: me ? rosterCapForTier(me.shipTier) : rosterCapForTier(1),
       listings: listings.map(listingView),
     });
   } catch (e: any) {
@@ -313,8 +316,9 @@ router.post("/leagues/:id/market/buy", async (req: Request, res: Response) => {
     const listingId = String(req.body?.listingId || "");
     const me = await myMembership(worldId, uid(req));
     if (!me) return res.status(403).json({ error: "Je zit niet in deze league." });
-    if (await prisma.squadMember.count({ where: { membershipId: me.id } }) >= ROSTER_CAP)
-      return res.status(400).json({ error: "Je bemanning zit vol (13/13). Verkoop eerst iemand." });
+    const cap = rosterCapForTier(me.shipTier);
+    if (await prisma.squadMember.count({ where: { membershipId: me.id } }) >= cap)
+      return res.status(400).json({ error: `Je bemanning zit vol (${cap}/${cap}). Upgrade je schip of verkoop eerst iemand.` });
 
     const member = await prisma.$transaction(async (tx) => {
       const L = await tx.marketListing.findUnique({ where: { id: listingId } });
@@ -371,7 +375,7 @@ router.get("/leagues/:id/squad", async (req: Request, res: Response) => {
     res.json({
       crewName: me.crewName, captain: me.captain, funds: me.funds,
       captainStats: { p: me.capP, d: me.capD, s: me.capS, cond: me.capCond },
-      rosterCap: ROSTER_CAP, squad,
+      rosterCap: rosterCapForTier(me.shipTier), squad,
     });
   } catch (e: any) {
     res.status(e.status || 500).json({ error: e.message });

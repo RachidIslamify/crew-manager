@@ -68,3 +68,19 @@
 .adm-wsub{ font-family:'Spectral',serif; font-size:11px; color:#6b4a26; margin-top:2px; }
 .adm-wcode{ font-family:'Bangers',sans-serif; letter-spacing:1px; color:#9a6b1e; }
 .adm-wbtns{ display:flex; gap:6px; flex:none; }
+
+/* schip-strip op het crew-scherm */
+.cw-ship{ display:flex; align-items:center; gap:10px; margin:10px 0 4px;
+  padding:9px 12px; background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12); border-radius:11px; }
+.cw-ship-pip{ width:30px; height:30px; border-radius:8px; display:grid; place-items:center;
+  font-size:16px; background:#1b4332; border:1px solid rgba(255,255,255,.2); }
+.cw-ship-meta{ display:flex; flex-direction:column; line-height:1.15; }
+.cw-ship-meta b{ font-size:14px; }
+.cw-ship-meta i{ font-style:normal; font-size:12px; opacity:.7; }
+.cw-ship-sp{ flex:1 1 auto; }
+.cw-ship-upg{ cursor:pointer; font:inherit; font-weight:700; color:#2a1c05;
+  background:#e9c46a; border:0; border-radius:10px; padding:8px 14px; }
+.cw-ship-upg:hover{ filter:brightness(1.06); }
+.cw-ship-upg:disabled{ opacity:.6; cursor:default; }
+.cw-ship-max{ font-size:12px; opacity:.65; font-style:italic; }
