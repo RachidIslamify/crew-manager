@@ -14,7 +14,8 @@ function renderCaptains(){
     card.setAttribute("aria-selected", "false");
     card.dataset.name = cap.n;
     card.innerHTML =
-      '<div class="cap-card__av" style="background:' + colorFor(cap.n) + '">' + initial(cap.n) + '</div>' +
+      '<div class="cap-card__av" style="background:' + colorFor(cap.n) + '">' + initial(cap.n) +
+        (window.CrewCard ? CrewCard.photoTag(cap.n) : "") + '</div>' +
       '<div class="cap-card__name">' + escapeHtml(cap.n) + '</div>';
     card.addEventListener("click", () => selectCaptain(cap.n, card));
     wrap.appendChild(card);

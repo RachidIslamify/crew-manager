@@ -279,35 +279,37 @@
   /* ---- past het schip + de slots op de beschikbare schermhoogte ---- */
   function fitCrew(){
     var root = content(); if (!root) return;
-    var main = root.querySelector(".cw-main");
     var col  = root.querySelector(".ship-col");
-    if (!main || !col) return;
+    var svg  = col && col.querySelector("svg");
+    if (!col || !svg) return;
+
+    var AR = 360 / 500;
+    var vb = svg.getAttribute("viewBox");
+    if (vb){ var p = vb.split(/[\s,]+/); var vw = +p[2], vh = +p[3]; if (vw > 0 && vh > 0) AR = vw / vh; }
 
     var landscape = false;
     try { landscape = window.matchMedia("(orientation: landscape)").matches; } catch (e) {}
-    var st  = getComputedStyle(main);
-    var gap = parseFloat(st.gap || st.columnGap || st.rowGap || "0") || 0;
-    var mrect = main.getBoundingClientRect();
-    var bench = root.querySelector(".bench-col");
-    var brect = bench ? bench.getBoundingClientRect() : { width: 0, height: 0 };
+    var main = root.querySelector(".cw-main");
 
-    var availW, availH;
-    if (landscape){ availW = mrect.width - brect.width - gap;  availH = mrect.height; }
-    else          { availW = mrect.width;                      availH = mrect.height - brect.height - gap; }
-    if (availW < 40 || availH < 40) return;
+    var availH, availW;
+    if (landscape && main){
+      availH = Math.max(220, main.getBoundingClientRect().height - 8);
+      availW = Math.max(180, col.getBoundingClientRect().width || 320);
+    } else {
+      var top = col.getBoundingClientRect().top;
+      var vpH = window.innerHeight || 600;
+      availH  = Math.max(260, vpH - top - 24);
+      var parent = col.parentNode ? col.parentNode.getBoundingClientRect().width : 0;
+      availW  = Math.max(180, parent || col.getBoundingClientRect().width || 320);
+    }
 
-    // schip-verhouding uit de SVG viewBox halen (val terug op 360x500)
-    var AR = 360 / 500, svg = col.querySelector("svg");
-    if (svg){ var vb = svg.getAttribute("viewBox"); if (vb){ var p = vb.split(/[\s,]+/); var vw = +p[2], vh = +p[3]; if (vw > 0 && vh > 0) AR = vw / vh; } }
-
-    var w = availW, h = w / AR;
-    if (h > availH){ h = availH; w = h * AR; }
-    w = Math.max(150, Math.floor(w));
-    h = Math.max(150, Math.floor(h));
+    var w = availH * AR;
+    if (w > availW) w = availW;
+    var h = w / AR;
 
     col.style.flex   = "0 0 auto";
-    col.style.width  = w + "px";
-    col.style.height = h + "px";
+    col.style.width  = Math.floor(w) + "px";
+    col.style.height = Math.floor(h) + "px";
     col.style.margin = "0 auto";
 
     var scale = Math.max(0.60, Math.min(1, h / 500));
@@ -512,7 +514,9 @@
       ".cw-ship-icbtn.can-upg:hover{background:#f0cf80;}",
       ".cs-tired{position:absolute;top:-8px;left:-8px;width:20px;height:20px;border-radius:50%;background:#b34747;color:#fff;font-size:11px;display:grid;place-items:center;border:2px solid #0e2a36;z-index:2;}",
       ".drag-ghost{position:fixed;z-index:9999;transform:translate(-50%,-50%);pointer-events:none;opacity:.92;}",
-      ".cs-editor{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;background:linear-gradient(180deg,#15394a,#0a2330);}",
+      ".ship-col{position:relative;}",
+      ".ship-col>svg{display:block;width:100%;height:100%;}",
+      "@media (orientation: landscape){.cs-fit .cw-main{display:flex;flex-direction:row;align-items:stretch;gap:18px;}.cs-fit .cw-main .bench-col{flex:1 1 auto;min-width:0;}}",      "@media (orientation: landscape){.cs-fit .cw-main{display:flex;align-items:flex-start;gap:18px;}.cs-fit .cw-main .ship-col{flex:0 0 auto;}.cs-fit .cw-main .bench-col{flex:1 1 auto;min-width:200px;}}",      ".cs-editor{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;background:linear-gradient(180deg,#15394a,#0a2330);}",
       ".cs-editor.open{display:flex;}",
       ".cs-ed-head{display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,.12);}",
       ".cs-ed-head h2{margin:0;flex:1;font-weight:700;font-style:italic;letter-spacing:.04em;text-transform:uppercase;font-size:16px;color:#f3e9d6;}",

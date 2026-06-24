@@ -25,7 +25,8 @@
   function avatar(name, cls){
     var c = (typeof colorFor === "function") ? colorFor(name || "?") : "#8a5a2b";
     var i = (typeof initial === "function") ? initial(name || "?") : "?";
-    return '<span class="' + (cls || "mk2-av") + '" style="background:' + c + '">' + i + '</span>';
+    var ph = window.CrewCard ? CrewCard.photoTag(name) : "";
+    return '<span class="' + (cls || "mk2-av") + '" style="background:' + c + '">' + i + ph + '</span>';
   }
 
   var M = { id: null, tab: "buy", mkt: null, sq: null };

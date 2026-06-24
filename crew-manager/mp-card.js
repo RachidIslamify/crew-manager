@@ -59,17 +59,25 @@
     return null;
   }
 
+  // --- losse <img>-overlay voor een naam (leeg als er geen foto is).
+  //     Bedoeld om OVER een bestaand avatar-blokje te leggen dat al de
+  //     gekleurde initiaal toont; faalt de foto, dan verdwijnt de img
+  //     (onerror) en blijft de initiaal staan. Hergebruikt door de pickers,
+  //     die hun eigen avatar-container met eigen maat/CSS houden.
+  function photoTag(name) {
+    var path = imgFor(name);
+    return path
+      ? '<img class="cc-img" src="' + esc(path) + '" alt="" loading="lazy" onerror="this.remove()">'
+      : "";
+  }
+
   // --- rond fotootje. Toont de foto; faalt 'ie of is er geen, dan blijft
   //     het gekleurde initiaal-blokje eronder zichtbaar (onerror = remove).
   function avatar(name, size) {
     size = size || 40;
     var fs = Math.max(11, Math.round(size * 0.42));
-    var path = imgFor(name);
-    var img = path
-      ? '<img class="cc-img" src="' + esc(path) + '" alt="" loading="lazy" onerror="this.remove()">'
-      : "";
     return '<span class="cc-av" style="width:' + size + "px;height:" + size +
-      "px;font-size:" + fs + "px;background:" + col(name) + '">' + ini(name) + img + "</span>";
+      "px;font-size:" + fs + "px;background:" + col(name) + '">' + ini(name) + photoTag(name) + "</span>";
   }
 
   // --- dek-slot EN bench-kaart (zelfde kaart): foto + naam + rol ----------
@@ -129,6 +137,8 @@
         "border-radius:50%;color:#fff;font-family:var(--display,'Bangers',sans-serif);" +
         "overflow:hidden;box-shadow:inset 0 -2px 0 rgba(0,0,0,.22);flex:0 0 auto;line-height:1;}" +
       ".cc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}" +
+      // avatar-containers die hun eigen maat/CSS houden; laat ze de foto clippen
+      ".cap-card__av,.ol-cap-av,.mk2-av,.gh-emblem,.gh-team-emblem,.ol-av,.cw-av{position:relative;overflow:hidden;}" +
 
       ".cc-member{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 auto;}" +
       ".cc-member .cc-nm{font-family:var(--display,'Bangers',sans-serif);font-size:14px;" +
@@ -181,6 +191,7 @@
   window.CrewCard = {
     imgFor: imgFor,
     avatar: avatar,
+    photoTag: photoTag,
     member: member,
     picker: picker,
     opponent: opponent,

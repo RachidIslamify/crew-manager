@@ -36,7 +36,8 @@
   var ICO_NEWS   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13v14H5a2 2 0 0 1-2-2V6"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 8h6M7 11h6M7 14h4"/></svg>';
 
   function avatar(name, cls){
-    return '<span class="' + (cls || "ol-av") + '" style="background:' + colOf(name) + '">' + iniOf(name) + '</span>';
+    return '<span class="' + (cls || "ol-av") + '" style="background:' + colOf(name) + '">' + iniOf(name) +
+      (window.CrewCard ? CrewCard.photoTag(name) : "") + '</span>';
   }
 
   // total crew bounty, computed defensively from the squad (mirrors totalCrewBounty)
@@ -126,9 +127,10 @@
        finished      -> Grand Tournament call-to-action
      ==================================================================== */
 
-  function teamBlock(name, cap, bounty){
+  function teamBlock(name, cap, bounty, photoName){
+    var ph = (window.CrewCard && (photoName || cap)) ? CrewCard.photoTag(photoName || cap) : "";
     return '<div class="gh-team">' +
-      '<div class="gh-team-emblem" style="background:' + colOf(name) + '">' + iniOf(name) + '</div>' +
+      '<div class="gh-team-emblem" style="background:' + colOf(name) + '">' + iniOf(name) + ph + '</div>' +
       '<div class="gh-team-name">' + esc(name) + '</div>' +
       (cap ? '<div class="gh-team-sub">Captain ' + esc(cap) + '</div>' : '') +
       (bounty != null ? '<div class="gh-team-bounty">\u2620 ' + shortFunds(bounty) + '</div>' : '') +
@@ -221,6 +223,9 @@
     var standings = [];
     try { if (Api.worldStandings){ var s = await Api.worldStandings(L.id); standings = (s && s.standings) || []; } } catch (e){ standings = []; }
 
+    var capByCrew = {};
+    (lg.crews || []).forEach(function (c){ if (c && c.crewName) capByCrew[c.crewName] = c.captain; });
+
     var opp = null;
     if (active){
       try {
@@ -242,7 +247,8 @@
     html +=
       '<div class="gh-top">' +
         '<div class="gh-id">' +
-          '<div class="gh-emblem" style="background:' + colOf(crewName) + '">' + iniOf(crewName) + '</div>' +
+          '<div class="gh-emblem" style="background:' + colOf(crewName) + '">' + iniOf(crewName) +
+            (window.CrewCard && cap ? CrewCard.photoTag(cap) : "") + '</div>' +
           '<div class="gh-id-main">' +
             '<div class="gh-crew">' + esc(crewName) + '</div>' +
             '<div class="gh-stats">' +
@@ -303,7 +309,7 @@
             '<div class="gh-next-l">Next match in</div>' +
             '<div class="gh-count" id="gh-count">\u00b7\u00b7h \u00b7\u00b7m \u00b7\u00b7s</div>' +
           '</div>' +
-          (opp ? teamBlock(opp, null, null) : tbdBlock("Rest day", "no match scheduled")) +
+          (opp ? teamBlock(opp, null, null, capByCrew[opp]) : tbdBlock("Rest day", "no match scheduled")) +
         '</div>' +
         '<div class="gh-battle-foot">' +
           '<span class="gh-island">Day ' + day + ' of ' + total + ' \u00b7 kick-off 19:00</span>' +
@@ -356,8 +362,8 @@
       b.addEventListener("click", function (){ go(b.getAttribute("data-act")); });
     });
 
-    var bag = el("gh-bag"); if (bag) bag.addEventListener("click", function (){ document.body.classList.remove("gh-active"); go("inventory"); });
-    var bell = el("gh-bell"); if (bell) bell.addEventListener("click", function (){ toast("No new notifications yet"); });
+    var bag = el("gh-bag"); if (bag) bag.addEventListener("click", function (e){ e.stopPropagation(); openBag(bag); });
+    var bell = el("gh-bell"); if (bell) bell.addEventListener("click", function (e){ e.stopPropagation(); openBell(bell); });
     var menu = el("gh-menu"); if (menu) menu.addEventListener("click", function (e){ e.stopPropagation(); openMenu(menu); });
     var copy = el("gh-copy"); if (copy) copy.addEventListener("click", function (){ doCopy(lg.code); });
 
@@ -388,10 +394,13 @@
     else if (a === "market"){ if (typeof window.cmOpenMarket === "function") window.cmOpenMarket(L.id); }
     else if (a === "training"){ if (typeof window.cmOpenTraining === "function") window.cmOpenTraining(L.id); }
     else if (a === "standings"){ if (typeof window.cmOpenCompetition === "function") window.cmOpenCompetition(L.id); }
-    else if (a === "matchday" || a === "watch"){
+    else if (a === "matchday"){
       if (typeof window.cmOpenMatchday === "function") window.cmOpenMatchday(L.id);
-      else if (typeof window.cmPlayMatchday === "function") window.cmPlayMatchday(L.id);
       else if (typeof window.cmOpenCompetition === "function") window.cmOpenCompetition(L.id);
+    }
+    else if (a === "watch"){
+      if (typeof window.cmPlayMatchday === "function") window.cmPlayMatchday(L.id);
+      else if (typeof window.cmOpenMatchday === "function") window.cmOpenMatchday(L.id);
     }
     else if (a === "tourney"){ if (typeof window.cmOpenTournament === "function") window.cmOpenTournament(L.id); }
     else if (a === "achievements"){ if (typeof window.cmOpenAchievements === "function") window.cmOpenAchievements(); }
@@ -403,7 +412,7 @@
   /* ---- top-right hamburger menu (full navigation) ---- */
   function closeMenu(){ var m = document.querySelector(".gh-menu-pop"); if (m && m.parentNode) m.parentNode.removeChild(m); }
   function openMenu(anchor){
-    closeMenu();
+    closeMenu(); closePanel();
     var items = [
       { label: "Matchday",        act: "matchday",  c: "#c0392b" },
       { label: "Crew",            act: "crew",      c: "#1f6f4a" },
@@ -454,6 +463,112 @@
         if (!m.contains(e.target) && e.target !== anchor){ closeMenu(); document.removeEventListener("click", onDoc); }
       });
     }, 0);
+  }
+
+  /* ---- kleine dropdown-panelen voor de topbar-iconen (bel / rugzak) ---- */
+  function closePanel(){ var p = document.querySelector(".gh-pop"); if (p && p.parentNode) p.parentNode.removeChild(p); }
+  function openPanel(anchor, html){
+    closeMenu(); closePanel();
+    var p = document.createElement("div");
+    p.className = "gh-pop";
+    p.innerHTML = html;
+    document.body.appendChild(p);
+    var r = anchor.getBoundingClientRect();
+    p.style.top  = (r.bottom + window.scrollY + 6) + "px";
+    p.style.left = Math.max(8, r.right + window.scrollX - p.offsetWidth) + "px";
+    setTimeout(function (){
+      document.addEventListener("click", function onDoc(e){
+        if (!p.contains(e.target) && e.target !== anchor){ closePanel(); document.removeEventListener("click", onDoc); }
+      });
+    }, 0);
+    return p;
+  }
+  function openBell(anchor){
+    openPanel(anchor,
+      '<div class="gh-pop-h">Notifications</div>' +
+      '<div class="gh-pop-empty">You\u2019re all caught up \u2014 no new notifications.</div>');
+  }
+
+  /* ---- kleine topbar-dropdowns (bel / rugzak) ---- */
+  var INV_RC = { bronze:"#b3713a", silver:"#7f97a6", gold:"#d99a1f", crew:"#9b3f8c", stamina:"#2e7d5b" };
+  var ROLE_EMB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.2-2.9 7.4-7 8.6C7.9 18.4 5 15.2 5 11V6z"/><path d="M9.2 11.6l2 2 3.6-4"/></svg>';
+  var STAM_EMB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg>';
+
+  function closePanel(){ var p = document.querySelector(".gh-pop"); if (p && p.parentNode) p.parentNode.removeChild(p); }
+  function openPanel(anchor, html){
+    closeMenu(); closePanel();
+    var p = document.createElement("div");
+    p.className = "gh-pop";
+    p.innerHTML = html;
+    document.body.appendChild(p);
+    var r = anchor.getBoundingClientRect();
+    p.style.top  = (r.bottom + window.scrollY + 6) + "px";
+    p.style.left = Math.max(8, r.right + window.scrollX - p.offsetWidth) + "px";
+    setTimeout(function (){
+      document.addEventListener("click", function onDoc(e){
+        if (!p.contains(e.target) && e.target !== anchor){ closePanel(); document.removeEventListener("click", onDoc); }
+      });
+    }, 0);
+    return p;
+  }
+
+  function openBell(anchor){
+    openPanel(anchor,
+      '<div class="gh-pop-h"><span>Notifications</span></div>' +
+      '<div class="gh-pop-empty">You\u2019re all caught up \u2014 no new notifications.</div>');
+  }
+
+  function groupInv(items){
+    var map = {};
+    (items || []).forEach(function (it){
+      var k = it.kind + "|" + it.value + "|" + it.rarity;
+      if (!map[k]) map[k] = { kind: it.kind, value: it.value, rarity: it.rarity, data: it.data, ids: [] };
+      map[k].ids.push(it.id);
+    });
+    return Object.keys(map).map(function (k){ return map[k]; });
+  }
+  function bagRow(g){
+    var emb, sub;
+    if (g.kind === "crew_card"){
+      var d = g.data || {};
+      emb = '<span class="gh-pop-av" style="background:' + INV_RC.crew + '">' + iniOf(g.value) + '</span>';
+      sub = (d.p != null) ? ("P" + d.p + " \u00b7 D" + d.d + " \u00b7 S" + d.s) : "Crew card";
+    } else if (g.kind === "stamina"){
+      emb = '<span class="gh-pop-ic" style="background:' + INV_RC.stamina + '">' + STAM_EMB + '</span>';
+      var amt = (g.data && g.data.amount) ? g.data.amount : 25;
+      sub = "Restores +" + amt + " stamina";
+    } else {
+      emb = '<span class="gh-pop-ic" style="background:' + (INV_RC[g.rarity] || INV_RC.gold) + '">' + ROLE_EMB + '</span>';
+      sub = "Role card";
+    }
+    var cnt = g.ids.length > 1 ? '<span class="gh-pop-cnt">\u00d7' + g.ids.length + '</span>' : '';
+    return '<div class="gh-pop-row">' + emb +
+      '<div class="gh-pop-tx"><div class="gh-pop-nm">' + esc(g.value) + '</div><div class="gh-pop-sub">' + esc(sub) + '</div></div>' +
+      cnt + '</div>';
+  }
+
+  async function openBag(anchor){
+    var p = openPanel(anchor, '<div class="gh-pop-h"><span>Backpack</span></div><div class="gh-pop-empty">Loading\u2026</div>');
+    var items = [];
+    try { var inv = await Api.inventory(); items = (inv && inv.items) || []; }
+    catch (e){ items = null; }
+    if (!p.parentNode) return;   // tussentijds gesloten
+    if (items === null){
+      p.innerHTML = '<div class="gh-pop-h"><span>Backpack</span></div><div class="gh-pop-empty">Couldn\u2019t load your backpack.</div>';
+      return;
+    }
+    var groups = groupInv(items);
+    var total = groups.reduce(function (a, g){ return a + g.ids.length; }, 0);
+    var head = '<div class="gh-pop-h"><span>Backpack</span>' + (total ? '<span class="gh-pop-c">' + total + (total === 1 ? " card" : " cards") + '</span>' : '') + '</div>';
+    if (!groups.length){
+      p.innerHTML = head + '<div class="gh-pop-empty">Your backpack is empty \u2014 complete missions and open chests to collect cards.</div>';
+      return;
+    }
+    var rows = groups.slice(0, 4).map(bagRow).join("");
+    p.innerHTML = head + '<div class="gh-pop-list">' + rows + '</div>' +
+      '<div class="gh-pop-foot"><button class="gh-pop-open" id="gh-bag-open" type="button">Open backpack</button></div>';
+    var ob = p.querySelector("#gh-bag-open");
+    if (ob) ob.addEventListener("click", function (){ closePanel(); go("inventory"); });
   }
 
   async function doStartNow(){
@@ -574,7 +689,8 @@
     caps.forEach(function (c){
       var taken = !!c.taken;
       grid += '<button class="ol-cap' + (taken ? ' taken' : '') + '" data-n="' + esc(c.name) + '"' + (taken ? ' disabled' : '') + '>' +
-        avatar(c.name, "ol-cap-av") +
+        '<span class="ol-cap-av" style="background:' + colOf(c.name) + '">' + iniOf(c.name) +
+          (window.CrewCard ? CrewCard.photoTag(c.name) : "") + '</span>' +
         '<div class="ol-cap-nm">' + esc(c.name) + '</div>' +
         (taken ? '<div class="ol-cap-taken">taken \u00b7 ' + esc(c.by || "") + '</div>' : '<div class="ol-cap-st">8 \u00b7 8 \u00b7 8</div>') +
         '</button>';

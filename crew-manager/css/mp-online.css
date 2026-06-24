@@ -774,3 +774,54 @@ body.inv-active #cp-content{ max-width:none; width:100%; margin:0; padding:0; }
 .cw-bag:hover{ background:var(--parch-2); }
 .cw-bag:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(138,90,43,.3); }
 .cw-bag svg{ width:20px; height:20px; }
+
+/* zelfde hover-lift als de action-tiles, ook op Quick match / Missions / Newspaper */
+.gh-soon-card.gh-v3{
+  cursor:pointer;
+  transition:transform .08s ease, box-shadow .12s ease;
+}
+.gh-soon-card.gh-v3:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 26px rgba(0,0,0,.32);
+}
+
+/* kleine dropdown-panelen voor de topbar-iconen (bel / rugzak) */
+.gh-pop{ position:absolute; z-index:80; width:min(280px, 86vw); max-height:calc(100vh - 90px); overflow:auto;
+  background:var(--parch); border:2px solid var(--line); border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.45); }
+.gh-pop-h{ font-family:var(--display); font-size:15px; letter-spacing:.5px; color:#fff;
+  background:linear-gradient(180deg,#16506b,#0d2f40); border-bottom:2px solid var(--gold-d);
+  border-radius:10px 10px 0 0; padding:9px 13px; }
+.gh-pop-empty{ padding:18px 14px; font-size:13px; color:var(--ink-2); font-style:italic; text-align:center; }
+.gh-pop-list{ display:flex; flex-direction:column; }
+.gh-pop-row{ display:flex; align-items:center; gap:10px; padding:10px 13px; border-bottom:1px solid rgba(138,90,43,.14); }
+.gh-pop-row:last-child{ border-bottom:none; }
+
+/* kleine topbar-dropdowns (bel / rugzak) — zelfde look als gh-menu */
+.gh-pop{ position:absolute; z-index:80; width:min(284px, 88vw); max-height:calc(100vh - 90px); overflow:auto;
+  background:var(--parch); border:2px solid var(--line); border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.45);
+  scrollbar-width:none; }
+.gh-pop::-webkit-scrollbar{ display:none; }
+.gh-pop-h{ display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--display); font-size:15px; letter-spacing:.5px; color:#fff;
+  background:linear-gradient(180deg,#16506b,#0d2f40); border-bottom:2px solid var(--gold-d);
+  border-radius:10px 10px 0 0; padding:9px 13px; position:sticky; top:0; }
+.gh-pop-c{ font-family:var(--display); font-size:12px; color:var(--gold-hi); }
+.gh-pop-empty{ padding:22px 14px; font-size:13px; color:var(--ink-2); font-style:italic; text-align:center; }
+.gh-pop-list{ display:flex; flex-direction:column; }
+.gh-pop-row{ display:flex; align-items:center; gap:10px; padding:10px 13px; border-bottom:1px solid rgba(138,90,43,.16); }
+.gh-pop-row:last-child{ border-bottom:none; }
+.gh-pop-ic{ width:34px; height:34px; flex:0 0 auto; border-radius:9px; color:#fff; display:flex; align-items:center; justify-content:center;
+  border:2px solid rgba(0,0,0,.16); box-shadow:inset 0 2px 3px rgba(255,255,255,.3), inset 0 -3px 4px rgba(0,0,0,.2); }
+.gh-pop-ic svg{ width:19px; height:19px; }
+.gh-pop-av{ width:34px; height:34px; flex:0 0 auto; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-family:var(--display); font-size:16px; box-shadow:inset 0 -2px 0 rgba(0,0,0,.22); }
+.gh-pop-tx{ flex:1; min-width:0; }
+.gh-pop-nm{ font-family:var(--display); font-size:15px; letter-spacing:.3px; color:var(--ink); line-height:1.1; }
+.gh-pop-sub{ font-size:11.5px; color:var(--ink-2); margin-top:1px; }
+.gh-pop-cnt{ flex:0 0 auto; font-family:var(--display); font-size:13px; color:var(--ink);
+  background:var(--parch-3); border:1px solid var(--line-soft); border-radius:7px; padding:1px 7px; }
+.gh-pop-foot{ padding:10px 13px; text-align:center; border-top:1px solid rgba(138,90,43,.18); position:sticky; bottom:0; background:var(--parch); }
+.gh-pop-open{ font-family:var(--display); font-size:13px; letter-spacing:.4px; color:var(--ink);
+  background:linear-gradient(180deg,var(--gold-hi),var(--gold)); border:1.5px solid var(--gold-d); border-radius:9px;
+  padding:6px 18px; cursor:pointer; box-shadow:0 2px 0 var(--gold-d); }
+.gh-pop-open:active{ transform:translateY(2px); box-shadow:0 0 0 var(--gold-d); }

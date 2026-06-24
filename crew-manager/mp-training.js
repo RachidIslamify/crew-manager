@@ -106,6 +106,50 @@
       (pendSlot ? "pick a crewmate &darr;" : wantSlot ? "place here &uarr;" : "+ add") + '</div>';
   }
 
+  /* ---- open slots per stat, from current state ---- */
+  function openByStat(){
+    var b = bucket(), open = {};
+    STATS.forEach(function (s){ open[s] = SLOTS_PER_STAT - (b[s] ? b[s].length : 0); });
+    return open;
+  }
+
+  /* ---- AUTO: zet elk vrij crewlid in het veld van z'n laagste stat
+          (gelijke stats -> volgorde P,D,S), overflow naar de op-een-na-laagste.
+          Vuurt per plaatsing een server-call af en herlaadt daarna. ---- */
+  async function autoFill(){
+    var open = openByStat();
+    var totalOpen = STATS.reduce(function (n, s){ return n + open[s]; }, 0);
+    if (totalOpen <= 0){ toast("No open training slots \u2014 remove someone first."); return; }
+
+    var avail = available();
+    if (!avail.length){ toast("Everyone is already training."); return; }
+
+    var ranked = avail.map(function (x){
+      var order = STATS.slice().sort(function (a, c){
+        return (x.st[a] - x.st[c]) || (STATS.indexOf(a) - STATS.indexOf(c));
+      });
+      return { name: x.n, order: order, done: false };
+    });
+
+    var plan = [];
+    function take(name, stat){ if (open[stat] > 0){ open[stat]--; plan.push({ name: name, stat: stat }); return true; } return false; }
+    // pass 1: ieders laagste stat
+    ranked.forEach(function (r){ if (!r.done && take(r.name, r.order[0])) r.done = true; });
+    // pass 2: overflow naar de volgende laagste met ruimte
+    ranked.forEach(function (r){ if (r.done) return; for (var k = 1; k < r.order.length; k++){ if (take(r.name, r.order[k])){ r.done = true; break; } } });
+
+    if (!plan.length){ toast("No open training slots \u2014 remove someone first."); return; }
+
+    var btn = el("tr-auto");
+    if (btn){ btn.disabled = true; btn.textContent = "Filling\u2026"; }
+    T.pending = null;
+    try {
+      for (var i = 0; i < plan.length; i++){ await Api.startTraining(T.id, plan[i].name, plan[i].stat); }
+      toast("Auto-filled " + plan.length + (plan.length === 1 ? " crewmate" : " crewmates"));
+    } catch (e){ toast(e.message || "Couldn\u2019t auto-fill"); }
+    await load();
+  }
+
   function render(){
     var d = T.data, b = bucket();
     var cols = STATS.map(function (stat){
@@ -126,15 +170,25 @@
             '</button>';
         }).join("");
 
+    // Auto-knop alleen tonen als er iets te vullen is (open slot + iemand vrij)
+    var open = openByStat();
+    var totalOpen = STATS.reduce(function (n, s){ return n + open[s]; }, 0);
+    var canAuto = totalOpen > 0 && avail.length > 0;
+
     content().innerHTML =
       head((d.active ? d.active.length : 0) + "/" + (d.slotsTotal || 6) + " slots in training") +
-      '<p class="tg-intro">Tap a field slot then a crewmate \u2014 or a crewmate then a slot. Each session takes <b>6 hours</b> and adds +' +
+      '<div class="tg-toolbar">' +
+        '<button class="btn-gold-sm" id="tr-auto" type="button"' + (canAuto ? "" : " disabled") + '>Auto-fill lowest stat</button>' +
+      '</div>' +
+      '<p class="tg-intro">Tap a field slot then a crewmate \u2014 or a crewmate then a slot, or hit <b>Auto-fill</b> to put each crewmate in their lowest stat. Each session takes <b>6 hours</b> and adds +' +
         (d.gain || 3) + ' to that stat. Up to 2 per stat, 6 in total. Training runs even while you\u2019re away.</p>' +
       '<div class="tcols">' + cols + '</div>' +
       '<div class="tg-avail-t">Available crew</div>' +
       '<div class="tg-avail">' + chips + '</div>';
 
     wireBack();
+    var auto = el("tr-auto"); if (auto) auto.addEventListener("click", autoFill);
+
     content().querySelectorAll("[data-slot]").forEach(function (e){
       e.addEventListener("click", function (){
         var pr = e.getAttribute("data-slot").split(":"); var stat = pr[0], i = +pr[1];

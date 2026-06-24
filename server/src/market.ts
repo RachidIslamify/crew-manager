@@ -16,14 +16,11 @@
      hetzelfde lid kunnen kopen (de koop claimt de rij atomair).
    - "listedDay" is tevens "beschikbaar-vanaf-dag": een afgekoeld lid wordt
      geparkeerd met listedDay in de toekomst en komt sterker terug.
-   - Roster-cap voor SPELERS volgt de schip-tier (rosterCapForTier). Bots
-     houden hun eigen vaste bovengrens (ROSTER_CAP) — zij kennen geen schepen.
    ==================================================================== */
 
 import { Router, Request, Response } from "express";
 import { prisma } from "./prisma";
 import { bumpMissions } from "./missions";
-import { rosterCapForTier } from "./config/shipTiers";
 
 /* ---- characterpool (zelfde loader als online.ts) ---- */
 const pd: any = require("../../crew-manager/data-pirates.js");
@@ -40,7 +37,7 @@ function uid(req: Request): string {
 const STAT_CAP          = 99;
 const STAT_FLOOR        = 2;
 const MEMBER_START_SCALE = 0.62;     // recruits enter below their data potential
-const ROSTER_CAP        = 13;        // BOT-bovengrens (spelers volgen de schip-tier)
+const ROSTER_CAP        = 13;        // crew members (captain is separate)
 const MARKET_SIZE       = 12;        // visible listings on the board at once
 
 const TENURE_MIN        = 2;         // days a listing stays before it cycles off
@@ -301,7 +298,7 @@ router.get("/leagues/:id/market", async (req: Request, res: Response) => {
       day,
       funds: me?.funds ?? 0,
       crewSize: me ? await prisma.squadMember.count({ where: { membershipId: me.id } }) : 0,
-      rosterCap: me ? rosterCapForTier(me.shipTier) : rosterCapForTier(1),
+      rosterCap: ROSTER_CAP,
       listings: listings.map(listingView),
     });
   } catch (e: any) {
@@ -316,9 +313,8 @@ router.post("/leagues/:id/market/buy", async (req: Request, res: Response) => {
     const listingId = String(req.body?.listingId || "");
     const me = await myMembership(worldId, uid(req));
     if (!me) return res.status(403).json({ error: "Je zit niet in deze league." });
-    const cap = rosterCapForTier(me.shipTier);
-    if (await prisma.squadMember.count({ where: { membershipId: me.id } }) >= cap)
-      return res.status(400).json({ error: `Je bemanning zit vol (${cap}/${cap}). Upgrade je schip of verkoop eerst iemand.` });
+    if (await prisma.squadMember.count({ where: { membershipId: me.id } }) >= ROSTER_CAP)
+      return res.status(400).json({ error: "Je bemanning zit vol (13/13). Verkoop eerst iemand." });
 
     const member = await prisma.$transaction(async (tx) => {
       const L = await tx.marketListing.findUnique({ where: { id: listingId } });
@@ -329,9 +325,11 @@ router.post("/leagues/:id/market/buy", async (req: Request, res: Response) => {
       const claimed = await tx.marketListing.deleteMany({ where: { id: listingId } });
       if (claimed.count === 0) throw Object.assign(new Error("Iemand was je net voor."), { status: 409 });
       await tx.worldMembership.update({ where: { id: me.id }, data: { funds: fresh.funds - price } });
+      const w = await tx.world.findUnique({ where: { id: worldId } });
       return tx.squadMember.create({ data: {
         membershipId: me.id, name: L.name, role: L.role, altRoles: L.altRoles,
         p: L.p, d: L.d, s: L.s, cond: 100, boughtPrice: price, isGeneric: false,
+        boughtDay: w?.currentDay ?? 1,
       }});
     });
     bumpMissions(uid(req), worldId, "trade").catch(() => {});
@@ -351,8 +349,10 @@ router.post("/leagues/:id/market/sell", async (req: Request, res: Response) => {
 
     const m = await prisma.squadMember.findUnique({ where: { id: squadMemberId } });
     if (!m || m.membershipId !== me.id) return res.status(404).json({ error: "Dit bemanningslid is niet van jou." });
-    if (m.createdAt > lastMatchdayMoment())
-      return res.status(400).json({ error: "Dit lid kun je nog niet verkopen \u2014 het heeft nog geen speeldag voor je gespeeld." });
+    const world = await prisma.world.findUnique({ where: { id: worldId } });
+    const today = world?.currentDay ?? 1;
+    if (m.boughtDay != null && today <= m.boughtDay)
+      return res.status(400).json({ error: "Dit lid kun je nog niet verkopen \u2014 wacht tot na de volgende speeldag." });
 
     const value = baseBounty(m.p + m.d + m.s);   // sell at current value
     await prisma.$transaction([
@@ -375,7 +375,7 @@ router.get("/leagues/:id/squad", async (req: Request, res: Response) => {
     res.json({
       crewName: me.crewName, captain: me.captain, funds: me.funds,
       captainStats: { p: me.capP, d: me.capD, s: me.capS, cond: me.capCond },
-      rosterCap: rosterCapForTier(me.shipTier), squad,
+      rosterCap: ROSTER_CAP, squad,
     });
   } catch (e: any) {
     res.status(e.status || 500).json({ error: e.message });

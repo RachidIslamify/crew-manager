@@ -165,6 +165,7 @@ model SquadMember {
   createdAt    DateTime @default(now())
   altRoles    String[]  @default([])
   isGeneric   Boolean   @default(false)
+  boughtDay   Int?
 
   membership   WorldMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
 

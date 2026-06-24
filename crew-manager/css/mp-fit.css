@@ -18,21 +18,23 @@
      de slot-kaartjes schalen mee via --cs-slot-scale.
    ==================================================================== */
 
-/* geen pagina-scroll op dit scherm; .app vult exact de schermhoogte */
-body[data-screen="screen-competition"]{ overflow:hidden; }
+/* geen pagina-scroll — ALLEEN op het crew-scherm (dat een .cs-fit-wrapper rendert).
+   Markt / dashboard / training delen screen-competition maar hebben géén .cs-fit,
+   dus die houden hun normale scroll. */
+body[data-screen="screen-competition"]:has(#cp-content > .cs-fit){ overflow:hidden; }
 
-body[data-screen="screen-competition"] .app{
+body[data-screen="screen-competition"]:has(#cp-content > .cs-fit) .app{
   max-width:none; width:100%;
   height:100dvh; min-height:0;
   padding:8px 12px; margin:0;
   display:flex; flex-direction:column; overflow:hidden;
 }
 
-body[data-screen="screen-competition"] .screen.is-active{
+body[data-screen="screen-competition"]:has(#cp-content > .cs-fit) .screen.is-active{
   display:flex; flex:1 1 auto; min-height:0;
 }
 
-body[data-screen="screen-competition"] #cp-content.wl-wrap{
+body[data-screen="screen-competition"] #cp-content.wl-wrap:has(> .cs-fit){
   max-width:none; width:100%; margin:0; padding:0;
   flex:1 1 auto; min-height:0;
   display:flex; flex-direction:column;
@@ -62,7 +64,7 @@ body[data-screen="screen-competition"] .ship-col svg{
 }
 
 /* slot-kaartjes schalen mee met de schiphoogte (var gezet door fitCrew) */
-body[data-screen="screen-competition"] .slot{
+body[data-screen="screen-competition"] .cs-fit .slot{
   transform:translate(-50%,-50%) scale(var(--cs-slot-scale,1));
   transform-origin:center center;
 }

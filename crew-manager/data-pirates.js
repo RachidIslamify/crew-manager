@@ -37,6 +37,8 @@ const PIRATES = [
   { n:"Trafalgar Law", r:"Captain", img:"law.jpg",        p:8, d:8, s:8, c:"Heart Pirates",      sp:["Room: Shambles","Gamma Knife"] },
   { n:"Eustass Kid",   r:"Captain", img:"eustass.jpg",    p:8, d:8, s:8, c:"Kid Pirates",        sp:["Punk Gibson","Repel","Punk Gibson"] },
   { n:"Buggy",         r:"Captain", img:"Buggy.jpg",      p:8, d:8, s:8, c:"Buggy Pirates",      sp:["Chop-Chop Cannon","Muggy Ball"] },
+  { n:"Gol D. Roger",  r:"Captain", img:"roger.jpg",     p:8, d:8, s:8, c:"Roger Pirates",       sp:["Divine Departure"] },
+
 
   // --- Swordsman -----------------------------------------------------------
   { n:"Zoro",              r:"Swordsman", p:8, d:7, s:7, c:"Straw Hat Pirates",  sp:["Santoryu Ogi","King of Hell"] },
@@ -78,7 +80,6 @@ const PIRATES = [
   { n:"Gladius",           r:"Sniper",    p:6, d:5, s:6, c:"Donquixote Pirates", sp:["Burst Spike"] },
   { n:"Yasopp",            r:"Sniper",    p:7, d:7, s:8, c:"Red Hair Pirates",   sp:["Hawk-Eye Shot"] },
   { n:"Capone Bege",       r:"Sniper",    p:7, d:5, s:6, c:"Free Agent", sp:[] },
-  { n:"Rindo",             r:"Sniper",    p:6, d:5, s:6, c:"Free Agent", sp:[] },
   { n:"Wyper",             r:"Sniper",    p:7, d:5, s:6, c:"Free Agent", sp:[] },
 
   // --- Chef ----------------------------------------------------------------
@@ -173,8 +174,8 @@ const PIRATES = [
   { n:"Wire",              r:"Crewmate",  p:6, d:6, s:6, c:"Kid Pirates",        sp:[] },
   { n:"Mohji",             r:"Crewmate",  p:4, d:4, s:5, c:"Buggy Pirates",      sp:[] },
   { n:"Alvida",            r:"Crewmate",  p:5, d:5, s:6, c:"Buggy Pirates",      sp:["Slip-Slip Strike"] },
-  { n:"Crocodile",         r:"Crewmate", cap:true, p:8, d:8, s:8, c:"Free Agent", sp:["Desert Samble","Ground Death"] },
-  { n:"Boa Hancock",       r:"Crewmate", cap:true, p:8, d:7, s:8, c:"Free Agent", sp:["Love-Love Beam","Perfume Femur"] },
+  { n:"Crocodile",         r:"Crewmate", img:"crocodile.jpg", cap:true, p:8, d:8, s:8, c:"Free Agent", sp:["Desert Samble","Ground Death"] },
+  { n:"Boa Hancock",       r:"Crewmate", img:"BoaHancock.jpg", cap:true, p:8, d:7, s:8, c:"Free Agent", sp:["Love-Love Beam","Perfume Femur"] },
   { n:"Bartolomeo",        r:"Crewmate", p:6, d:7, s:5, c:"Free Agent", sp:["Barrier Crash"] },
   { n:"Bartholomew Kuma",  r:"Crewmate", p:8, d:8, s:6, c:"Free Agent", sp:["Ursa Shock","Pad Cannon"] },
   { n:"Gecko Moria",       r:"Crewmate", p:7, d:7, s:5, c:"Free Agent", sp:["Shadow Asgard"] },
@@ -187,7 +188,7 @@ const PIRATES = [
   { n:"Karasu",            r:"Crewmate", p:7, d:5, s:6, c:"Free Agent", sp:[] },
   { n:"Inazuma",           r:"Crewmate", p:5, d:5, s:7, c:"Free Agent", sp:[] },
   { n:"Hack",              r:"Crewmate", p:4, d:4, s:6, c:"Free Agent", sp:[] },
-  { n:"Monkey D. Dragon",  r:"Crewmate", cap:true, p:8, d:8, s:7, c:"Free Agent", sp:[] },
+  { n:"Monkey D. Dragon",  r:"Crewmate", img:"Dragon.jpg", cap:true, p:8, d:8, s:7, c:"Free Agent", sp:[] },
   { n:"Jewelrey Bonney",   r:"Crewmate", p:6, d:5, s:6, c:"Free Agent", sp:[] },
   { n:"Hajrudin",          r:"Crewmate", p:8, d:6, s:6, c:"Free Agent", sp:[] },
   { n:"Dorry",             r:"Crewmate", p:8, d:6, s:6, c:"Free Agent", sp:[] },
