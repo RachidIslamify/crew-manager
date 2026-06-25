@@ -264,6 +264,7 @@
         '<div class="bench-col"><div class="bench"><div class="bench-title">Bench</div>' +
           '<div class="cc-benchwrap">' + benchHtml + '</div>' +
           '</div><div class="bench-note">' + note + '</div></div>' +
+        '</div>' +
       '</div>';
 
     el("cs-back").addEventListener("click", function (){ if (typeof window.cmOpenLeague === "function") window.cmOpenLeague(C.id); });
