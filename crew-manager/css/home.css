@@ -197,14 +197,86 @@
 .hm-modal-err{ display:none; color:var(--danger); font-size:13px; margin-top:11px; font-weight:600; }
 
 /* ==================== responsive ==================== */
-/* Wide -> two panes. Below 880px the panes stack (account section on top). */
-@media (max-width:880px){
-  .hm-grid{ grid-template-columns:1fr; }
+/* DESKTOP / breed: de twee-koloms layout hierboven blijft ongemoeid.
+   Telefoon wordt per ORIENTATIE geregeld — STAAND = stapelen,
+   LIGGEND = account links / slots rechts. Fit-to-height zodat de
+   manager-slots hun helft netjes opvullen. Alles staat HIER (1 plek),
+   dus geen "flits" van eerst de ene en dan de andere layout. */
+
+/* ---------- gedeeld telefoon-regime (staand OF kort-liggend) ---------- */
+@media (orientation:portrait),
+       (orientation:landscape) and (max-height:600px){
+
+  /* scherm vult exact de viewport; alleen actief op de account-home */
+  .app:has(#screen-newgame.is-active){
+    max-width:none; padding:0; height:100dvh; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  #screen-newgame.is-active{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+
+  .hm-wrap{ flex:1 1 auto; min-height:0; max-width:none; display:flex; flex-direction:column; gap:10px;
+    padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right))
+            max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); }
+  .hm-brand{ flex:0 0 auto; margin:0; }
+  .hm-grid{ flex:1 1 auto; min-height:0; gap:10px; }
+
+  /* --- account-helft: compact + mockup-volgorde (profiel > join/free > stats > missions/news) --- */
+  .hm-prof-stack{ gap:9px; }
+  .hm-rowA{ order:1; grid-template-columns:1fr; gap:9px; }     /* profiel boven join/free */
+  .hm-side{ grid-template-columns:1fr 1fr; grid-template-rows:auto; gap:9px; } /* join/free naast elkaar */
+  .hm-side-card{ flex-direction:row; padding:9px 11px; gap:7px; }
+  .hm-side-emoji{ font-size:18px; }
+  .hm-side-l{ font-size:13px; }
+  .hm-side-sub{ display:none; }
+  .hm-rowC{ order:2; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; } /* stats vóór missions/news */
+  .hm-rowB{ order:3; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:8px; }
+
+  .hm-prof{ padding:11px 12px; }
+  .hm-av{ width:54px; height:54px; font-size:26px; }
+  .hm-name{ font-size:24px; }
+  .hm-prof-bottom{ margin-top:10px; }
+
+  /* stat-tegels kleiner */
+  .hm-stat{ min-height:0; padding:6px 4px 7px; gap:1px; }
+  .hm-stat-ic{ width:24px; height:24px; font-size:15px; margin-top:0; }
+  .hm-stat-v{ font-size:16px; }
+  .hm-stat-h{ font-size:9px; }
+
+  /* missions + newspaper compacter */
+  .hm-mission, .hm-news{ min-height:0; padding:10px 12px; }
+  .hm-mission-h{ font-size:15px; } .hm-mission-c{ font-size:21px; } .hm-mission-s{ font-size:11px; }
+  .hm-news-h{ font-size:18px; }
+
+  /* --- manager-slots: 2x2 dat de helft opvult met gelijke maat --- */
+  .hm-col-slots{ min-height:0; }
+  .hm-slots{ grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:minmax(120px,1fr); gap:10px; }
+  .hm-slot{ min-height:0; }
+  .hm-slot-num{ width:30px; height:30px; font-size:18px; }
+  .hm-slot-body{ padding:12px; }
+  .hm-slot-top{ margin:2px 0 9px 30px; }
+  .hm-crew{ font-size:20px; }
+  .hm-meta{ font-size:12px; }
+  .hm-plus{ width:50px; height:50px; font-size:34px; }
+  .hm-empty-l{ font-size:14px; }
 }
-/* Phone: everything to one column; slots stack; tiles 2-up. */
-@media (max-width:560px){
-  .hm-rowA, .hm-rowB{ grid-template-columns:1fr; }
-  .hm-rowC{ grid-template-columns:1fr 1fr; }
-  .hm-slots{ grid-template-columns:1fr; grid-auto-rows:auto; }
-  .hm-wrap{ padding:16px 12px 28px; }
+
+/* ---------- STAAND: één kolom (account boven, slots eronder) ---------- */
+@media (orientation:portrait){
+  .hm-grid{ display:flex; flex-direction:column; }
+  .hm-col-prof{ flex:0 0 auto; }
+  .hm-col-slots{ flex:1 1 auto; }
+}
+
+/* ---------- LIGGEND (kort + breed): twee kolommen (account links, slots rechts) ---------- */
+@media (orientation:landscape) and (max-height:600px){
+  .hm-grid{ display:grid; grid-template-columns:minmax(0,1.04fr) minmax(0,1fr); align-items:stretch; }
+  /* stats + missions/news hier nóg wat compacter zodat de linkerkolom past */
+  .hm-rowC{ gap:6px; }
+  .hm-stat{ padding:5px 3px 6px; }
+  .hm-stat-ic{ width:20px; height:20px; font-size:12px; }
+  .hm-stat-v{ font-size:14px; }
+  .hm-stat-h{ font-size:8px; }
+  .hm-mission, .hm-news{ padding:8px 11px; }
+  .hm-mission-h{ font-size:13px; } .hm-mission-c{ font-size:17px; }
+  .hm-news-h{ font-size:15px; }
 }
