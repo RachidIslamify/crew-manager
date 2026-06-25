@@ -1,25 +1,17 @@
 /* ====================================================================
-   mp-gh-fit.css — responsieve, scroll-vrije GAME-HOME (dashboard).
+   mp-gh-fit.css — responsieve, scroll-vrije GAME-HOME (dashboard).  v2
 
    ALLES is gescoped op  body.gh-active  -> raakt ALLEEN de online
    game-home. Markt / training / league / matchday delen het scherm
    (screen-competition) maar hebben deze body-class niet, dus die
    blijven exact zoals ze waren.
 
-   Laad dit ALS LAATSTE stylesheet in index.html (ná mp-online.css en
-   mp-fit.css). Alle regels staan op  body.gh-active …  zodat ze van de
-   bestaande gh-regels in mp-online.css winnen zonder !important.
+   Laad dit ALS LAATSTE stylesheet in index.html (ná mp-online.css).
 
-   Model:
-   - DESKTOP / groot scherm  -> ongemoeid (de bestaande layout uit
-     mp-online.css blijft: 4 tegels + quick/missions/news | standings).
-   - TELEFOON-PORTRET        -> dashboard vult de schermhoogte, geen scroll;
-     2x2 tegels, daaronder quick+missions, met de newspaper eronder.
-   - TELEFOON-LIGGEND (kort) -> dashboard vult de schermhoogte, geen scroll;
-     4 tegels op één rij, quick+missions+newspaper op één regel.
-   - In beide telefoon-standen: standings verborgen (de League-tegel leidt
-     er toch al heen) en de matchday-kaart mag krimpen (neemt de meeste
-     ruimte in).
+   v2-fix: op de telefoon werd de matchday-kaart niet compact (die kromp
+   alleen op LAGE schermen via vh), waardoor de tegels eronder platgedrukt
+   werden tot streepjes. Nu is de matchday in portret altijd compact en
+   hebben de tegels een ondergrens, zodat ze nooit meer platklappen.
    ==================================================================== */
 
 
@@ -32,8 +24,6 @@
 
   body.gh-active{ overflow:hidden; }
 
-  /* <main class="app"> bevat alle schermen; alleen het actieve toont.
-     We maken 'm zo hoog als het scherm en verdelen de ruimte als kolom. */
   body.gh-active .app{
     max-width:none; width:100%;
     height:100dvh; min-height:0;
@@ -50,101 +40,113 @@
     display:flex; flex-direction:column;
   }
 
-  /* .gh vult de rest en wordt zelf een kolom. Padding houdt rekening met
-     de notch (safe-area) want de PWA draait viewport-fit=cover. */
   body.gh-active .gh{
     flex:1 1 auto; min-height:0;
     width:100%; max-width:1120px; margin:0 auto;
     display:flex; flex-direction:column;
-    gap:clamp(8px,1.6vh,16px);
+    gap:clamp(8px,1.4vh,14px);
     padding:
-      max(clamp(8px,1.6vh,14px), env(safe-area-inset-top))
+      max(clamp(8px,1.4vh,12px), env(safe-area-inset-top))
       max(clamp(12px,3vw,18px), env(safe-area-inset-right))
-      max(clamp(8px,1.6vh,14px), env(safe-area-inset-bottom))
+      max(clamp(8px,1.4vh,12px), env(safe-area-inset-bottom))
       max(clamp(12px,3vw,18px), env(safe-area-inset-left));
   }
 
   /* kop vast bovenin; eigen marges van de secties uit (gap regelt het nu) */
-  body.gh-active .gh-top{ flex:0 0 auto; margin-bottom:0; padding-bottom:clamp(8px,1.4vh,14px); }
+  body.gh-active .gh-top{ flex:0 0 auto; margin-bottom:0; padding-bottom:clamp(6px,1.2vh,12px); }
   body.gh-active .gh-battle{ margin-bottom:0; }
   body.gh-active .gh-actions{ margin-bottom:0; }
 
-  /* telefoons: geen standings-paneel, en kaarten mogen hun hoogte loslaten */
+  /* telefoons: geen standings-paneel */
   body.gh-active .gh-stand-wrap{ display:none; }
-  body.gh-active .gh-soon-card{ min-height:0; }
-  body.gh-active .gh-tile{ min-height:0; }
 }
 
 
 /* ====================================================================
    TELEFOON-PORTRET
-   schip-indeling: matchday boven (mag krimpen), 2x2 tegels vullen de
-   ruimte, daaronder quick+missions met de newspaper eronder.
+   matchday compact (vast klein, niet pas op lage schermen),
+   2x2 tegels met ondergrens (klappen nooit plat),
+   daaronder quick+missions met newspaper eronder.
    ==================================================================== */
 @media (orientation:portrait){
 
-  /* matchday: natuurlijk, mag krimpen als het krap wordt */
-  body.gh-active .gh-battle{ flex:0 1 auto; min-height:0; padding:clamp(12px,2vh,18px); }
+  /* ---- matchday: compact, vaste kleine maten ---- */
+  body.gh-active .gh-battle{ flex:0 0 auto; padding:clamp(10px,1.8vh,16px); }
+  body.gh-active .gh-battle-row{ grid-template-columns:1fr auto 1fr; gap:clamp(8px,2vw,14px); }
+  body.gh-active .gh-team-emblem{ width:clamp(42px,6vh,52px); height:clamp(42px,6vh,52px); font-size:24px; margin-bottom:4px; }
+  body.gh-active .gh-team-name{ font-size:15px; }
+  body.gh-active .gh-team-sub{ font-size:11px; margin-top:1px; }
+  body.gh-active .gh-team-bounty{ font-size:13px; margin-top:2px; }
+  body.gh-active .gh-md,
+  body.gh-active .gh-next-l,
+  body.gh-active .gh-prep-sub{ font-size:11px; }
+  body.gh-active .gh-vs{ font-size:24px; margin:1px 0; }
+  body.gh-active .gh-prep{ font-size:20px; }
+  body.gh-active .gh-count{ font-size:16px; padding:4px 12px; }
+  body.gh-active .gh-battle-foot{ margin-top:8px; padding-top:8px; gap:8px; }
+  body.gh-active .gh-start{ font-size:14px; padding:7px 18px; }
+  body.gh-active .gh-island{ font-size:11px; }
 
-  /* tegels vullen de resterende hoogte als 2x2 (rijen even hoog) */
+  /* ---- tegels: 2x2, NOOIT platklappen (minmax-ondergrens) ---- */
   body.gh-active .gh-actions{
     flex:1 1 auto; min-height:0;
     grid-template-columns:1fr 1fr;
-    grid-auto-rows:minmax(0,1fr);
-    gap:clamp(8px,1.4vh,14px);
+    grid-auto-rows:minmax(72px, 1fr);
+    gap:clamp(8px,1.4vh,12px);
   }
+  body.gh-active .gh-tile{ min-height:0; padding:10px 12px; gap:6px; }
+  body.gh-active .gh-tile .ic{ width:34px; height:34px; font-size:18px; }
+  body.gh-active .gh-tile .t{ font-size:15px; }
+  body.gh-active .gh-tile .s{ font-size:11px; }
 
-  /* onderbalk: 1 kolom -> quick+missions naast elkaar, newspaper eronder */
-  body.gh-active .gh-bottom{ flex:0 0 auto; grid-template-columns:1fr; }
+  /* ---- onderbalk: quick+missions naast elkaar, newspaper eronder ---- */
+  body.gh-active .gh-bottom{ flex:0 0 auto; grid-template-columns:1fr; gap:clamp(8px,1.4vh,12px); }
   body.gh-active .gh-bl{ grid-template-columns:1fr 1fr; gap:clamp(8px,1.4vh,12px); }
   body.gh-active .gh-bl-news{ grid-column:1 / -1; }
-
-  /* matchday blijft 3-koloms (crew | VS | rival) i.p.v. te stapelen,
-     en schaalt mee met de schermhoogte zodat 'n korte telefoon ook past */
-  body.gh-active .gh-battle-row{ grid-template-columns:1fr auto 1fr; gap:clamp(8px,2vw,14px); }
-  body.gh-active .gh-team-emblem{ width:clamp(46px,9vh,72px); height:clamp(46px,9vh,72px); font-size:clamp(20px,5vh,34px); margin-bottom:clamp(4px,1vh,9px); }
-  body.gh-active .gh-team-name{ font-size:clamp(16px,2.6vh,22px); }
-  body.gh-active .gh-team-bounty{ font-size:clamp(13px,2vh,16px); margin-top:clamp(2px,.6vh,5px); }
-  body.gh-active .gh-vs{ font-size:clamp(22px,4.2vh,34px); margin:0; }
-  body.gh-active .gh-prep{ font-size:clamp(20px,3.4vh,28px); }
-  body.gh-active .gh-count{ font-size:clamp(16px,2.8vh,21px); padding:clamp(4px,.8vh,6px) 14px; }
-  body.gh-active .gh-battle-foot{ margin-top:clamp(8px,1.6vh,16px); padding-top:clamp(8px,1.2vh,14px); }
+  body.gh-active .gh-soon-card{ min-height:0; padding:11px 13px; gap:4px; }
+  body.gh-active .gh-ch-t{ font-size:17px; }
+  body.gh-active .gh-ch-s{ font-size:12px; margin-top:5px; }
+  body.gh-active .gh-news{ min-height:0; }
 }
 
 
 /* ====================================================================
    TELEFOON-LIGGEND  (kort + breed)
-   gebruik de breedte: matchday vult de hoogte (mag flink compact),
-   4 tegels op één rij, quick+missions+newspaper op één regel.
+   matchday vult de hoogte (compact), 4 tegels op één rij,
+   quick+missions+newspaper op één regel.
    ==================================================================== */
 @media (orientation:landscape) and (max-height:600px){
 
   body.gh-active .gh{ gap:clamp(6px,1.2vh,12px); }
 
-  /* matchday vult de resthoogte en comprimeert; clip i.p.v. scroll */
   body.gh-active .gh-battle{ flex:1 1 auto; min-height:0; overflow:hidden; padding:clamp(8px,2vh,16px); }
   body.gh-active .gh-battle-row{ grid-template-columns:1fr auto 1fr; gap:clamp(8px,2vw,14px); }
-  body.gh-active .gh-team-emblem{ width:clamp(40px,12vh,64px); height:clamp(40px,12vh,64px); font-size:clamp(18px,6vh,30px); margin-bottom:clamp(3px,1vh,7px); }
-  body.gh-active .gh-team-name{ font-size:clamp(15px,4.6vh,22px); }
-  body.gh-active .gh-team-bounty{ font-size:clamp(12px,3vh,16px); margin-top:2px; }
-  body.gh-active .gh-vs{ font-size:clamp(20px,7vh,34px); margin:0; }
-  body.gh-active .gh-prep{ font-size:clamp(18px,6vh,28px); }
-  body.gh-active .gh-count{ font-size:clamp(15px,5vh,21px); padding:4px 12px; }
-  body.gh-active .gh-battle-foot{ margin-top:clamp(6px,1.5vh,12px); padding-top:clamp(6px,1.2vh,12px); }
+  body.gh-active .gh-team-emblem{ width:clamp(38px,11vh,56px); height:clamp(38px,11vh,56px); font-size:clamp(16px,5vh,26px); margin-bottom:4px; }
+  body.gh-active .gh-team-name{ font-size:clamp(14px,4vh,20px); }
+  body.gh-active .gh-team-sub{ font-size:11px; }
+  body.gh-active .gh-team-bounty{ font-size:clamp(12px,3vh,15px); margin-top:2px; }
+  body.gh-active .gh-vs{ font-size:clamp(18px,6vh,30px); margin:0; }
+  body.gh-active .gh-prep{ font-size:clamp(16px,5vh,24px); }
+  body.gh-active .gh-count{ font-size:clamp(14px,4.5vh,20px); padding:4px 12px; }
+  body.gh-active .gh-battle-foot{ margin-top:clamp(5px,1.4vh,11px); padding-top:clamp(5px,1.1vh,11px); }
+  body.gh-active .gh-start{ font-size:14px; padding:7px 18px; }
 
-  /* tegels: vaste rij van 4, natuurlijke hoogte */
+  /* tegels: vaste rij van 4 */
   body.gh-active .gh-actions{
     flex:0 0 auto;
     grid-template-columns:repeat(4,minmax(0,1fr));
     grid-auto-rows:auto;
     gap:clamp(8px,2vw,14px);
   }
-  body.gh-active .gh-tile{ padding:clamp(8px,1.6vh,12px) 12px; gap:clamp(4px,1vh,8px); }
-  body.gh-active .gh-tile .ic{ width:clamp(34px,7vh,42px); height:clamp(34px,7vh,42px); font-size:clamp(18px,4vh,22px); }
+  body.gh-active .gh-tile{ min-height:0; padding:clamp(8px,1.6vh,12px) 12px; gap:clamp(4px,1vh,8px); }
+  body.gh-active .gh-tile .ic{ width:clamp(32px,6vh,42px); height:clamp(32px,6vh,42px); font-size:clamp(16px,3.5vh,22px); }
+  body.gh-active .gh-tile .t{ font-size:clamp(14px,3vh,18px); }
+  body.gh-active .gh-tile .s{ font-size:11px; }
 
-  /* onderbalk: quick | missions | newspaper, op één regel */
+  /* onderbalk: quick | missions | newspaper op één regel */
   body.gh-active .gh-bottom{ flex:0 0 auto; grid-template-columns:1fr; }
   body.gh-active .gh-bl{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(8px,2vw,14px); }
   body.gh-active .gh-bl-news{ grid-column:auto; }
+  body.gh-active .gh-soon-card{ min-height:0; padding:10px 12px; }
   body.gh-active .gh-news{ min-height:0; }
 }
