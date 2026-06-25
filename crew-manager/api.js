@@ -5,7 +5,7 @@
 const API_BASE =
   (location.hostname === "localhost" || location.hostname === "127.0.0.1")
     ? "http://localhost:4000"
-    : "https://JOUW-BACKEND.up.railway.app";   // <-- vervang door je echte Railway-URL (zonder / op het eind)
+    : "https://crew-manager-production.up.railway.app";
 
 const Auth = {
   getToken(){ return localStorage.getItem("cm_token") || ""; },
