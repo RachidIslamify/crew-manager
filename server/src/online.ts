@@ -17,7 +17,7 @@ import { prisma } from './prisma';
 import { seedWorldStart, seedMarketBoard } from './market';   // markt + bot-squads
 import { buildSeasonCalendar } from './engine';     // 30-dagen eilandenkalender
 
-const { PIRATES } = require("../../crew-manager/data-pirates.js");
+const { PIRATES } = require("./data-pirates");
 
 const onlineRouter = Router();
 

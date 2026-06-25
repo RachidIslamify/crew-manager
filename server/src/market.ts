@@ -23,7 +23,7 @@ import { prisma } from "./prisma";
 import { bumpMissions } from "./missions";
 
 /* ---- characterpool (zelfde loader als online.ts) ---- */
-const pd: any = require("../../crew-manager/data-pirates.js");
+const pd: any = require("./data-pirates");
 const PIRATES: any[] = pd.PIRATES || pd.default || (global as any).PIRATES || [];
 
 /* ---- ingelogde user (zelfde helper als online.ts) ---- */

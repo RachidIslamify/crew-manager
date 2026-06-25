@@ -22,7 +22,7 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "./prisma";
 
-const pd: any = require("../../crew-manager/data-pirates.js");
+const pd: any = require("./data-pirates");
 const PIRATES: any[] = pd.PIRATES || pd.default || [];
 
 function uid(req: Request): string {
