@@ -370,9 +370,12 @@
     if (active) startKickoff();
     else if (prepDay) startKickoff();
 
-    // ---- missions-kaartje vullen met live data (prep + actief) ----
-    if ((active || prepDay) && typeof window.cmMissionsWidget === "function")
-      window.cmMissionsWidget(document.getElementById("gh-missions-card"), L.id);
+    // ---- missions-kaartje bewust COMPACT houden op de home ----
+    //  De widget-fill (missie-regel + balk + daily/weekly-bolletjes) maakte de
+    //  kaart te lang. We laten 'm staan als "Missions / Daily challenges"; klikken
+    //  op de kaart opent nog steeds de volledige missions-pagina (data-act="missions").
+    // if ((active || prepDay) && typeof window.cmMissionsWidget === "function")
+    //   window.cmMissionsWidget(document.getElementById("gh-missions-card"), L.id);
 
     runAchievementCheck(L.id);   // server checkt + unlockt; nieuwe trophies -> toast
   }

@@ -168,7 +168,6 @@ const PIRATES = [
   { n:"Lao G",             r:"Crewmate",  p:6, d:5, s:5, c:"Donquixote Pirates", sp:[] },
   { n:"Baby 5",            r:"Crewmate",  p:5, d:5, s:6, c:"Donquixote Pirates", sp:[] },
   { n:"Dellinger",         r:"Crewmate",  p:6, d:5, s:7, c:"Donquixote Pirates", sp:["Fighting Fish Kick"] },
-  { n:"Limejuice",         r:"Crewmate",  p:6, d:6, s:6, c:"Red Hair Pirates",   sp:[] },
   { n:"Heat",              r:"Crewmate",  p:6, d:6, s:6, c:"Kid Pirates",        sp:["Flame Breath"] },
   { n:"Wire",              r:"Crewmate",  p:6, d:6, s:6, c:"Kid Pirates",        sp:[] },
   { n:"Mohji",             r:"Crewmate",  p:4, d:4, s:5, c:"Buggy Pirates",      sp:[] },
