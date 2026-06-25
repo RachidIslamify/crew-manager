@@ -284,14 +284,17 @@
        (2) de kaartjes-schaal (--cs-slot-scale) laten meelopen met de
            werkelijke dekbreedte, via een ResizeObserver op .ship-col.
      Geen viewport-meting, geen resize/orientation-listeners meer. ---- */
-  var SLOT_REF = 360;          // dekbreedte (px) waarbij de kaartjes op schaal 1 staan
-  var shipRO   = null;
+  var SLOT_FRAC = 0.26;        // doel: kaart-breedte ≈ 26% van de dek-breedte
+  var shipRO    = null;
 
   function applyScale(col){
     if (!col) return;
-    var w = col.offsetWidth || 0;                 // pre-transform breedte = korte zijde
-    if (!w) return;
-    var s = Math.max(0.60, Math.min(1.05, w / SLOT_REF));
+    var deck = col.offsetWidth || 0;               // korte zijde van het dek (pre-transform)
+    var slot = col.querySelector(".slot");         // 1 slot = natuurlijke kaartbreedte
+    var card = slot ? slot.offsetWidth : 0;        // pre-transform -> ongeschaalde maat
+    if (!deck || !card) return;
+    var s = (SLOT_FRAC * deck) / card;
+    s = Math.max(0.45, Math.min(1.15, s));
     content().style.setProperty("--cs-slot-scale", s.toFixed(3));
   }
 

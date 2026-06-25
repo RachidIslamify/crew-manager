@@ -1,5 +1,5 @@
 /* ====================================================================
-   mp-fit.css  (v2) — "past altijd op het scherm"-laag voor de ONLINE
+   mp-fit.css  (v3) — "past altijd op het scherm"-laag voor de ONLINE
    competitie. ALLES gescoped op
        body[data-screen="screen-competition"] + :has(#cp-content > .cs-fit)
    zodat single-player (screen-crew/market/training) nooit geraakt wordt.
@@ -9,11 +9,12 @@
    - #screen-competition vult de schermhoogte (100dvh), geen pagina-scroll.
    - kop (.cw-top) staat vast; .cw-main vult de rest.
    - PORTRET : dek rechtop boven, bench (2×2) eronder.
-   - LIGGEND : dek LIGT (boeg links, stuur rechts), bench-rail rechts
-               (vakjes onder elkaar).
-   - Dekgrootte = CSS aspect-ratio (geen JS-hoogtemeting meer). mp-crew.js
-     zet de echte verhouding in --ship-w/--ship-h (uit de SHIP_SVG viewBox)
-     en de kaartjes-schaal in --cs-slot-scale (ResizeObserver op .ship-col).
+   - LIGGEND : dek LIGT (boeg links, stuur rechts), bench-rail rechts.
+   - Dekgrootte = CSS aspect-ratio (geen JS-hoogtemeting). mp-crew.js zet de
+     echte verhouding in --ship-w/--ship-h (uit de SHIP_SVG viewBox) en de
+     kaartjes-schaal in --cs-slot-scale (gemeten t.o.v. de dekbreedte).
+   - .ship-col is ABSOLUUT gepositioneerd in de .ship-wrap zodat height:100%
+     altijd oplost (ook al is .ship-wrap een flex-kind).
    ==================================================================== */
 
 /* ---- app-shell: geen pagina-scroll, vul de hoogte (alleen crew) ---- */
@@ -49,12 +50,11 @@ body[data-screen="screen-competition"] .cw-main{
   display:flex; flex-direction:column; gap:10px;
 }
 
-/* dek-wrapper = de flex-cel; container voor de lig-fit + drager van de tools */
+/* dek-wrapper = de flex-cel; positioneer-context + container voor de lig-fit */
 body[data-screen="screen-competition"] .ship-wrap{
   flex:1 1 auto; min-height:0; min-width:0;
   position:relative; overflow:hidden;
   container-type:size;
-  display:flex; align-items:center; justify-content:center;
 }
 
 /* zwevende tools rechtsboven van het schip (alleen de kwast) */
@@ -69,26 +69,27 @@ body[data-screen="screen-competition"] .ship-tool{
 }
 body[data-screen="screen-competition"] .ship-tool:hover{ background:rgba(11,37,51,.82); }
 
-/* ==== dek: aspect-ratio i.p.v. fitCrew-hoogtemeting ==== */
+/* ==== dek: absoluut + gecentreerd, maat via aspect-ratio ====
+   absoluut zodat height:100% oplost tegen de (flex-)wrapper. */
 body[data-screen="screen-competition"] .ship-col{
-  position:relative;
-  aspect-ratio: var(--ship-w, 330) / var(--ship-h, 600);
-  height:100%; width:auto; max-width:100%; margin:0 auto;
+  position:absolute; top:50%; left:50%; margin:0;
+  height:100%; width:auto; max-width:100%;
+  aspect-ratio: var(--ship-w,330) / var(--ship-h,600);
+  transform: translate(-50%,-50%);
 }
 body[data-screen="screen-competition"] .ship-col > svg{
   position:absolute; inset:0; width:100%; height:100%; display:block;
 }
 
-/* dek-slots: absoluut gepositioneerd (inline left/top), schaal via var.
-   Bewust gescoped op .ship-col .slot zodat bench-slots NOOIT meegedraaid
-   of -verschoven worden. */
+/* dek-slots: absoluut (inline left/top), schaal via var. Bewust gescoped op
+   .ship-col .slot zodat bench-slots nooit meegedraaid/-verschoven worden. */
 body[data-screen="screen-competition"] .ship-col .slot{
   position:absolute;
   transform: translate(-50%,-50%) scale(var(--cs-slot-scale,1));
   transform-origin:center center;
 }
 
-/* bench (portret: 2×2 eronder) — base-look komt uit je bestaande CSS */
+/* bench (portret: 2x2 eronder) - base-look komt uit je bestaande CSS */
 body[data-screen="screen-competition"] .bench-col{
   flex:0 0 auto; display:flex; flex-direction:column; min-height:0;
 }
@@ -101,8 +102,7 @@ body[data-screen="screen-competition"] .cc-benchwrap .slot{
 }
 body[data-screen="screen-competition"] .bench-note{ flex:0 0 auto; }
 
-/* veiligheid: bij hoge tiers (veel bankplekken) mag de bank krimpen/scrollen,
-   het schip blijft heel */
+/* veiligheid: bij hoge tiers (veel bankplekken) mag de bank krimpen/scrollen */
 @media (orientation:portrait){
   body[data-screen="screen-competition"] .bench-col{ flex:0 1 auto; max-height:46%; }
   body[data-screen="screen-competition"] .bench{ min-height:0; overflow-y:auto; }
@@ -116,13 +116,11 @@ body[data-screen="screen-competition"] .bench-note{ flex:0 0 auto; }
 
   body[data-screen="screen-competition"] .ship-wrap{ flex:1 1 auto; }
 
-  /* absoluut gecentreerd + 90° gedraaid; fit-math met de echte dek-ratio.
-     De pre-transform layout-box mag de cel overschrijden — overflow:hidden
+  /* zelfde absolute centrering, nu 90 graden gedraaid + fit-math met dek-ratio.
+     De pre-transform layout-box mag de cel overschrijden - overflow:hidden
      op .ship-wrap vangt dat op; visueel past het altijd. */
   body[data-screen="screen-competition"] .ship-col{
-    position:absolute; top:50%; left:50%; margin:0;
     height: min(100cqw, calc(100cqh * var(--ship-h,600) / var(--ship-w,330)));
-    width:auto;
     transform: translate(-50%,-50%) rotate(-90deg);
   }
   /* kaartjes draaien tegengesteld terug -> tekst rechtop */
