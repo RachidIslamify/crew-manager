@@ -254,13 +254,16 @@
         '<button class="cw-bag" id="cs-bag" type="button" aria-label="Open inventory" title="Open your backpack">' + BAG_ICON + '</button>' +
         '<button class="btn-ghost cw-back" id="cs-back" type="button">Back</button>' +
       '</div>' +
-      shipStripHtml() +
       '<div class="cw-main">' +
-      '<div class="ship-col">' + SHIP + capSlot + deckHtml + '</div>' +
+        '<div class="ship-wrap">' +
+          '<div class="ship-tools">' +
+            '<button class="ship-tool" id="cs-brush" type="button" title="Customize ship" aria-label="Customize ship">\uD83D\uDD8C</button>' +
+          '</div>' +
+          '<div class="ship-col">' + SHIP + capSlot + deckHtml + '</div>' +
+        '</div>' +
         '<div class="bench-col"><div class="bench"><div class="bench-title">Bench</div>' +
           '<div class="cc-benchwrap">' + benchHtml + '</div>' +
           '</div><div class="bench-note">' + note + '</div></div>' +
-          '</div>' +
       '</div>';
 
     el("cs-back").addEventListener("click", function (){ if (typeof window.cmOpenLeague === "function") window.cmOpenLeague(C.id); });
@@ -269,51 +272,47 @@
       if (typeof window.cmOpenInventory === "function") window.cmOpenInventory(C.id);
       else toast("Inventory is not available yet");
     });
-    var upg = el("cs-upg");     if (upg) upg.addEventListener("click", doUpgrade);
-    var brush = el("cs-brush"); if (brush) brush.addEventListener("click", openEditor);
+    var brush = el("cs-brush"); if (brush) brush.addEventListener("click", openEditor);   // upgrade verhuist naar het schip-bewerkscherm
     content().querySelectorAll("[data-drag]").forEach(function (e){ e.addEventListener("pointerdown", onDragStart); });
-    requestAnimationFrame(fitCrew);
-    requestAnimationFrame(function (){ requestAnimationFrame(fitCrew); });
+    setupShipFit();
   }
 
-  /* ---- past het schip + de slots op de beschikbare schermhoogte ---- */
-  function fitCrew(){
-    var root = content(); if (!root) return;
-    var col  = root.querySelector(".ship-col");
-    var svg  = col && col.querySelector("svg");
-    if (!col || !svg) return;
+  /* ---- schip-fit: puur CSS (aspect-ratio + rotatie zit in mp-fit.css).
+     JS doet alleen nog:
+       (1) de ECHTE verhouding uit de SHIP_SVG viewBox in CSS-vars zetten
+           zodat het dek-vak het schip exact omsluit en de lig-fit klopt;
+       (2) de kaartjes-schaal (--cs-slot-scale) laten meelopen met de
+           werkelijke dekbreedte, via een ResizeObserver op .ship-col.
+     Geen viewport-meting, geen resize/orientation-listeners meer. ---- */
+  var SLOT_REF = 360;          // dekbreedte (px) waarbij de kaartjes op schaal 1 staan
+  var shipRO   = null;
 
-    var AR = 360 / 500;
-    var vb = svg.getAttribute("viewBox");
-    if (vb){ var p = vb.split(/[\s,]+/); var vw = +p[2], vh = +p[3]; if (vw > 0 && vh > 0) AR = vw / vh; }
+  function applyScale(col){
+    if (!col) return;
+    var w = col.offsetWidth || 0;                 // pre-transform breedte = korte zijde
+    if (!w) return;
+    var s = Math.max(0.60, Math.min(1.05, w / SLOT_REF));
+    content().style.setProperty("--cs-slot-scale", s.toFixed(3));
+  }
 
-    var landscape = false;
-    try { landscape = window.matchMedia("(orientation: landscape)").matches; } catch (e) {}
-    var main = root.querySelector(".cw-main");
+  function setupShipFit(){
+    var col = content().querySelector(".ship-col");
+    if (!col) return;
 
-    var availH, availW;
-    if (landscape && main){
-      availH = Math.max(220, main.getBoundingClientRect().height - 8);
-      availW = Math.max(180, col.getBoundingClientRect().width || 320);
-    } else {
-      var top = col.getBoundingClientRect().top;
-      var vpH = window.innerHeight || 600;
-      availH  = Math.max(260, vpH - top - 24);
-      var parent = col.parentNode ? col.parentNode.getBoundingClientRect().width : 0;
-      availW  = Math.max(180, parent || col.getBoundingClientRect().width || 320);
+    // (1) echte verhouding uit de viewBox -> CSS-vars (aspect-ratio + lig-fit)
+    var svg = col.querySelector("svg"), vw = 330, vh = 600;
+    var vb = svg && svg.getAttribute("viewBox");
+    if (vb){ var p = vb.split(/[\s,]+/); if (+p[2] > 0 && +p[3] > 0){ vw = +p[2]; vh = +p[3]; } }
+    col.style.setProperty("--ship-w", vw);
+    col.style.setProperty("--ship-h", vh);
+
+    // (2) kaartjes-schaal volgt de dekbreedte
+    if (shipRO) shipRO.disconnect();
+    if (typeof ResizeObserver === "function"){
+      shipRO = new ResizeObserver(function (){ applyScale(col); });
+      shipRO.observe(col);
     }
-
-    var w = availH * AR;
-    if (w > availW) w = availW;
-    var h = w / AR;
-
-    col.style.flex   = "0 0 auto";
-    col.style.width  = Math.floor(w) + "px";
-    col.style.height = Math.floor(h) + "px";
-    col.style.margin = "0 auto";
-
-    var scale = Math.max(0.60, Math.min(1, h / 500));
-    root.style.setProperty("--cs-slot-scale", scale.toFixed(3));
+    applyScale(col);
   }
 
   /* ---- drag & drop (posities; index-based) ---- */
@@ -516,7 +515,7 @@
       ".drag-ghost{position:fixed;z-index:9999;transform:translate(-50%,-50%);pointer-events:none;opacity:.92;}",
       ".ship-col{position:relative;}",
       ".ship-col>svg{display:block;width:100%;height:100%;}",
-      "@media (orientation: landscape){.cs-fit .cw-main{display:flex;flex-direction:row;align-items:stretch;gap:18px;}.cs-fit .cw-main .bench-col{flex:1 1 auto;min-width:0;}}",      "@media (orientation: landscape){.cs-fit .cw-main{display:flex;align-items:flex-start;gap:18px;}.cs-fit .cw-main .ship-col{flex:0 0 auto;}.cs-fit .cw-main .bench-col{flex:1 1 auto;min-width:200px;}}",      ".cs-editor{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;background:linear-gradient(180deg,#15394a,#0a2330);}",
+      ".cs-editor{position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;background:linear-gradient(180deg,#15394a,#0a2330);}",
       ".cs-editor.open{display:flex;}",
       ".cs-ed-head{display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,.12);}",
       ".cs-ed-head h2{margin:0;flex:1;font-weight:700;font-style:italic;letter-spacing:.04em;text-transform:uppercase;font-size:16px;color:#f3e9d6;}",
@@ -562,9 +561,6 @@
     document.head.appendChild(css);
   }
 
-  /* herbereken bij draaien/resizen van het scherm */
-  var fitT = null;
-  function onResize(){ if (fitT) cancelAnimationFrame(fitT); fitT = requestAnimationFrame(fitCrew); }
-  window.addEventListener("resize", onResize);
-  window.addEventListener("orientationchange", onResize);
+  /* (resize/orientation-listeners niet meer nodig: de ResizeObserver op
+     .ship-col in setupShipFit doet de schaal; de rest is CSS.) */
 })();
