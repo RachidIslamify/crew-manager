@@ -1,6 +1,11 @@
 "use strict";
 
-const API_BASE = "http://localhost:4000";
+// Backend draait lokaal op je eigen machine, online op Railway.
+// Lokaal (Live Server) -> localhost; alles anders (github.io) -> Railway.
+const API_BASE =
+  (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+    ? "http://localhost:4000"
+    : "https://JOUW-BACKEND.up.railway.app";   // <-- vervang door je echte Railway-URL (zonder / op het eind)
 
 const Auth = {
   getToken(){ return localStorage.getItem("cm_token") || ""; },
@@ -101,7 +106,7 @@ const Api = {
   getShip(worldId){ return apiFetch("/api/online/ship?worldId=" + encodeURIComponent(worldId)); },
   upgradeShip(worldId){ return apiFetch("/api/online/ship/upgrade", { method: "POST", body: JSON.stringify({ worldId: worldId }) }); },
   saveCosmetics(worldId, changes){ return apiFetch("/api/online/ship/cosmetics", { method: "POST", body: JSON.stringify({ worldId: worldId, changes: changes }) }); },
-  
+
   // ---- Multiplayer: speeldag terugkijken ----
   getMatch(id, day){ return apiFetch("/api/online/leagues/" + id + "/match" + (day ? ("?day=" + encodeURIComponent(day)) : "")); },
 
