@@ -947,3 +947,124 @@ body{ min-height:100dvh; }
   .tcol-h{ font-size:18px; padding:4px; margin-bottom:8px; }
   .ts{ font-size:15px; padding:7px 10px; margin-bottom:6px; }
 }
+
+/* ====================================================================
+   New Game setup (#screen-create) — telefoon (staand + liggend)  (v25)
+   Eén plek, gescoped op #screen-create. Desktop + andere schermen
+   blijven ongemoeid, geen flits.
+   ==================================================================== */
+
+/* "Easy · East Blue" op desktop: de '·' staat niet meer in de HTML maar
+   hier, zodat telefoon 'm kan weglaten en de regio onder de naam zakt. */
+.diff-card__name span::before{ content:"\00B7\00A0"; }
+
+/* Kolom-wrappers zijn op desktop/staand onzichtbaar voor de layout:
+   de kinderen stromen exact als voorheen. Alleen liggend worden het
+   echte kolommen. */
+.ng-col-a, .ng-col-b{ display:contents; }
+
+/* ----- STAAND (telefoon): alles gestapeld, geen scroll ----- */
+@media (max-width:560px){
+  .app:has(#screen-create.is-active){ max-width:none; padding:0; }
+
+  #screen-create.is-active{
+    min-height:100dvh; box-sizing:border-box;
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; justify-content:center; gap:9px;
+  }
+
+  #screen-create .brand{ margin:0; }
+  #screen-create .brand__plaque{ font-size:23px !important; padding:4px 18px; }
+
+  #screen-create .panel{ margin:0; padding:13px 14px; }
+  #screen-create .field{ margin:0 0 11px; }
+  #screen-create .field__label{ margin-bottom:5px; }
+
+  /* captain: horizontale scroll, compacter */
+  #screen-create .carousel{ gap:10px; padding:4px 2px 8px; }
+  #screen-create .cap-card{ flex-basis:80px; padding:9px 6px 8px; }
+  #screen-create .cap-card.is-selected{ padding:8px 5px 7px; }
+  #screen-create .cap-card__av{ width:42px; height:42px; font-size:22px; margin-bottom:6px; }
+  #screen-create .cap-card__name{ font-size:12.5px; min-height:0; }
+
+  /* difficulty: 3 vierkante blokjes */
+  #screen-create #difficulty-list{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+  #screen-create .diff-card{
+    aspect-ratio:1/1; padding:6px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; text-align:center;
+  }
+  #screen-create .diff-card.is-selected{ padding:6px; }
+  #screen-create .diff-card__desc{ display:none; }
+  #screen-create .diff-card__name{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:16px; line-height:1;
+  }
+  #screen-create .diff-card__name span{ display:block; font-size:10.5px; font-weight:600; }
+  #screen-create .diff-card__name span::before{ content:none; }
+
+  #screen-create .berries{ margin:9px 0 0; font-size:14px; }
+  #screen-create .form-hint{ margin:6px 0 0; min-height:0; }
+  #screen-create .btn-gold{ font-size:19px; padding:11px; margin-top:10px; }
+
+  #screen-create > div:last-child{ margin-top:0 !important; }
+  #screen-create .btn-ghost{ font-size:15px; padding:8px 22px; }
+}
+
+/* ----- LIGGEND (telefoon): twee kolommen, geen scroll ----- */
+@media (max-height:600px){
+  .app:has(#screen-create.is-active){ max-width:none; width:100%; padding:0; }
+
+  #screen-create.is-active{
+    min-height:100dvh; box-sizing:border-box;
+    padding:10px 16px calc(8px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; justify-content:center; gap:7px;
+  }
+
+  #screen-create .brand{ margin:0; }
+  #screen-create .brand__plaque{ font-size:20px !important; padding:3px 16px; }
+
+  /* panel = grid; wrappers worden echte kolommen */
+  #screen-create .panel{
+    margin:0; padding:12px 15px;
+    display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+    column-gap:16px; align-items:start;
+  }
+  #screen-create .ng-col-a,
+  #screen-create .ng-col-b{ display:flex; flex-direction:column; min-width:0; }
+
+  #screen-create .field{ margin:0 0 9px; }
+  #screen-create .ng-col-a .field:last-child,
+  #screen-create .ng-col-b .field{ margin-bottom:0; }
+  #screen-create .field__label{ margin-bottom:4px; }
+
+  /* captain */
+  #screen-create .carousel{ gap:9px; padding:3px 2px 7px; }
+  #screen-create .cap-card{ flex-basis:76px; padding:8px 5px 7px; }
+  #screen-create .cap-card.is-selected{ padding:7px 4px 6px; }
+  #screen-create .cap-card__av{ width:38px; height:38px; font-size:19px; margin-bottom:5px; }
+  #screen-create .cap-card__name{ font-size:12px; min-height:0; }
+
+  /* difficulty: niet vierkant in liggend → bespaart hoogte */
+  #screen-create #difficulty-list{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  #screen-create .diff-card{
+    aspect-ratio:auto; padding:9px 6px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; text-align:center;
+  }
+  #screen-create .diff-card.is-selected{ padding:9px 6px; }
+  #screen-create .diff-card__desc{ display:none; }
+  #screen-create .diff-card__name{
+    display:flex; flex-direction:column; align-items:center; gap:1px;
+    font-size:15px; line-height:1;
+  }
+  #screen-create .diff-card__name span{ display:block; font-size:10px; font-weight:600; }
+  #screen-create .diff-card__name span::before{ content:none; }
+
+  #screen-create .berries{ margin:9px 0 0; font-size:13px; }
+  #screen-create .form-hint{ margin:5px 0 0; font-size:12px; min-height:0; }
+  #screen-create .btn-gold{ font-size:17px; padding:10px; margin-top:9px; }
+
+  #screen-create > div:last-child{ margin-top:7px !important; }
+  #screen-create .btn-ghost{ font-size:15px; padding:7px 22px; }
+}

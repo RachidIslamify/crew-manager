@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=24" />
+  <link rel="stylesheet" href="css/styles.css?v=25" />
   <link rel="stylesheet" href="css/auth.css?v=1" />
   <link rel="stylesheet" href="css/menu.css?v=1" />
   <link rel="stylesheet" href="css/admin.css?v=1" />
@@ -207,36 +207,40 @@
     <section id="screen-create" class="screen">
       <header class="brand"><span class="brand__plaque" style="font-size:28px">New game</span></header>
       <section class="panel reveal">
-        <label class="field">
-          <span class="field__label">Crew name</span>
-          <input id="crew-name" type="text" maxlength="28" autocomplete="off" placeholder="E.g. The Sunrise Pirates" />
-        </label>
-        <div class="field">
-          <span class="field__label">Choose your captain</span>
-          <div class="carousel-wrap" id="carousel-wrap">
-            <div class="carousel" id="captain-carousel" role="listbox" aria-label="Choose your captain"></div>
+        <div class="ng-col-a">
+          <label class="field">
+            <span class="field__label">Crew name</span>
+            <input id="crew-name" type="text" maxlength="28" autocomplete="off" placeholder="E.g. The Sunrise Pirates" />
+          </label>
+          <div class="field">
+            <span class="field__label">Choose your captain</span>
+            <div class="carousel-wrap" id="carousel-wrap">
+              <div class="carousel" id="captain-carousel" role="listbox" aria-label="Choose your captain"></div>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <span class="field__label">Difficulty</span>
-          <div class="diff-list" id="difficulty-list" role="group" aria-label="Choose difficulty">
-            <button type="button" class="diff-card" data-diff="easy" aria-pressed="false">
-              <div class="diff-card__name">Easy <span>&middot; East Blue</span></div>
-              <div class="diff-card__desc">Rivals develop slowly. Build your legend at your own pace.</div>
-            </button>
-            <button type="button" class="diff-card is-selected" data-diff="normal" aria-pressed="true">
-              <div class="diff-card__name">Normal <span>&middot; Paradise</span></div>
-              <div class="diff-card__desc">Rivals keep pace. Earn the top spot with sharp management.</div>
-            </button>
-            <button type="button" class="diff-card" data-diff="hard" aria-pressed="false">
-              <div class="diff-card__name">Hard <span>&middot; New World</span></div>
-              <div class="diff-card__desc">Rivals outgrow you. Only a master reaches Laugh Tale.</div>
-            </button>
+        <div class="ng-col-b">
+          <div class="field">
+            <span class="field__label">Difficulty</span>
+            <div class="diff-list" id="difficulty-list" role="group" aria-label="Choose difficulty">
+              <button type="button" class="diff-card" data-diff="easy" aria-pressed="false">
+                <div class="diff-card__name">Easy <span>East Blue</span></div>
+                <div class="diff-card__desc">Rivals develop slowly. Build your legend at your own pace.</div>
+              </button>
+              <button type="button" class="diff-card is-selected" data-diff="normal" aria-pressed="true">
+                <div class="diff-card__name">Normal <span>Paradise</span></div>
+                <div class="diff-card__desc">Rivals keep pace. Earn the top spot with sharp management.</div>
+              </button>
+              <button type="button" class="diff-card" data-diff="hard" aria-pressed="false">
+                <div class="diff-card__name">Hard <span>New World</span></div>
+                <div class="diff-card__desc">Rivals outgrow you. Only a master reaches Laugh Tale.</div>
+              </button>
+            </div>
           </div>
+          <p class="berries">Starting funds: <span id="start-berries">—</span></p>
+          <p id="form-hint" class="form-hint">Enter a crew name and choose a captain to start.</p>
+          <button id="start-btn" class="btn-gold" type="button" disabled>Start new game</button>
         </div>
-        <p class="berries">Starting funds: <span id="start-berries">—</span></p>
-        <p id="form-hint" class="form-hint">Enter a crew name and choose a captain to start.</p>
-        <button id="start-btn" class="btn-gold" type="button" disabled>Start new game</button>
       </section>
       <div style="text-align:center;margin-top:6px"><button id="create-back" class="btn-ghost" type="button">Back</button></div>
     </section>
