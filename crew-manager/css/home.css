@@ -248,15 +248,15 @@
   .hm-stat-v{ font-size:16px; }
   .hm-stat-h{ font-size:9px; }
 
-  /* missions + newspaper compacter */
-  .hm-mission, .hm-news{ min-height:0; padding:10px 12px; }
-  .hm-mission-h{ font-size:15px; } .hm-mission-c{ font-size:21px; } .hm-mission-s{ font-size:11px; }
-  .hm-news-h{ font-size:18px; }
+  /* missions + newspaper kort & plat (zoals join crew / free 50) */
+  .hm-mission, .hm-news{ min-height:0; padding:8px 12px; }
+  .hm-mission-h{ font-size:14px; } .hm-mission-c{ font-size:18px; } .hm-mission-s{ font-size:10.5px; }
+  .hm-news-h{ font-size:16px; }
 
-  /* --- manager-slots: 2x2 dat de helft opvult met gelijke maat --- */
+  /* --- manager-slots: 2x2, echte vierkanten, korter --- */
   .hm-col-slots{ min-height:0; }
-  .hm-slots{ grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:minmax(120px,1fr); gap:10px; }
-  .hm-slot{ min-height:0; }
+  .hm-slots{ grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:auto; gap:10px; }
+  .hm-slot{ min-height:0; aspect-ratio:1 / 1; }
   .hm-slot-num{ width:30px; height:30px; font-size:18px; }
   .hm-slot-body{ padding:12px; }
   .hm-slot-top{ margin:2px 0 9px 30px; }
