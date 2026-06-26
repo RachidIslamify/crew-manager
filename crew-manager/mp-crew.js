@@ -10,7 +10,7 @@
      - generieke slots (rol reist met het karakter; plek telt niet)
      - kwast-knop -> los bewerk-scherm (side/top profile, drawer, finish ->
        samenvatting -> Api.saveCosmetics)
-   De .cw-ship-strip uit stap 3 (mp.css) wordt hergebruikt.
+   De UPGRADE zit nu in het bewerk-scherm (cs-editor) als upgrade-kaart.
 
    Rendert in #cp-content. window.cmOpenCrew(worldId).
    Single-player (game-crew.js) blijft volledig ongemoeid.
@@ -215,19 +215,6 @@
               : (C.data && C.data.funds != null ? C.data.funds : null);
     return (funds == null) ? true : (funds >= price);   // bij onbekende funds niet blokkeren
   }
-  function shipStripHtml(){
-    var ship = C.ship || { shipTier: 1, tierName: "Dinghy" };
-    var atMax = (ship.shipTier >= 3);
-    var upg = atMax
-      ? '<span class="cw-ship-max">Max tier</span>'
-      : '<button class="cw-ship-icbtn cs-upg-btn' + (canAfford() ? ' can-upg' : '') + '" id="cs-upg" type="button" title="Upgrade ship" aria-label="Upgrade ship">\u2B06</button>';
-    return '<div class="cw-ship">' +
-        '<span class="cw-ship-pip">\u26F5</span>' +
-        '<span class="cw-ship-meta"><b>Ship &middot; Tier ' + ship.shipTier + '</b><i>' + esc(ship.tierName || "") + '</i></span>' +
-        '<span class="cw-ship-sp"></span>' + upg +
-        '<button class="cw-ship-icbtn" id="cs-brush" type="button" title="Customize ship" aria-label="Customize ship">\uD83D\uDD8C</button>' +
-      '</div>';
-  }
 
   function render(){
     var d = C.data, roster = d.squad || [], cap = d.rosterCap || 13;
@@ -273,7 +260,7 @@
       if (typeof window.cmOpenInventory === "function") window.cmOpenInventory(C.id);
       else toast("Inventory is not available yet");
     });
-    var brush = el("cs-brush"); if (brush) brush.addEventListener("click", openEditor);   // upgrade verhuist naar het schip-bewerkscherm
+    var brush = el("cs-brush"); if (brush) brush.addEventListener("click", openEditor);   // kwast -> bewerk-scherm (met upgrade-kaart)
     content().querySelectorAll("[data-drag]").forEach(function (e){ e.addEventListener("pointerdown", onDragStart); });
     setupShipFit();
   }
@@ -283,7 +270,7 @@
        (1) de ECHTE verhouding uit de SHIP_SVG viewBox in CSS-vars zetten
            zodat het dek-vak het schip exact omsluit en de lig-fit klopt;
        (2) de kaartjes-schaal (--cs-slot-scale) laten meelopen met de
-           werkelijke dekbreedte, via een ResizeObserver op .ship-col.
+           werkelijke dekbreedte, via een ResizeObserver op .ship-wrap.
      Geen viewport-meting, geen resize/orientation-listeners meer. ---- */
   var SLOT_FRAC = 0.22;        // doel: kaart-breedte ≈ 22% van de dek-breedte
   var shipRO    = null;
@@ -394,6 +381,11 @@
       return m.role === "Shipwright" || (Array.isArray(m.altRoles) && m.altRoles.indexOf("Shipwright") >= 0);
     }));
   }
+  function shipFunds(){
+    if (C.ship && C.ship.funds != null) return C.ship.funds;
+    if (C.data && C.data.funds != null) return C.data.funds;
+    return null;
+  }
   function doUpgrade(){
     var cur = (C.ship && C.ship.shipTier) || 1, to = cur + 1, info = NEXT_TIER[to];
     if (!info) return;
@@ -406,8 +398,75 @@
   }
   async function confirmUpgrade(){
     var btn = el("cs-upg"); if (btn) btn.disabled = true;
-    try { var r = await Api.upgradeShip(C.id); toast(r.discounted ? "Ship upgraded \u2014 Shipwright discount applied!" : "Ship upgraded!"); await load(); }
+    try {
+      var r = await Api.upgradeShip(C.id);
+      toast(r.discounted ? "Ship upgraded \u2014 Shipwright discount applied!" : "Ship upgraded!");
+      await load();
+      // editor staat mogelijk nog open -> kaart verversen met de nieuwe tier
+      if (el("cs-editor") && el("cs-editor").classList.contains("open")) renderUpgradeCard();
+    }
     catch (e){ toast(e.message || "Upgrade failed"); if (btn) btn.disabled = false; }
+  }
+
+  /* upgrade-kaart in het bewerk-scherm (variant A) */
+  function renderUpgradeCard(){
+    var host = el("cs-upg-card"); if (!host) return;
+    var cur     = (C.ship && C.ship.shipTier) || 1;
+    var curName = (C.ship && C.ship.tierName) ? C.ship.tierName : ("Tier " + cur);
+    var info    = NEXT_TIER[cur + 1];
+
+    if (!info){
+      host.className = "cs-upg maxed";
+      host.innerHTML =
+        '<div class="cs-upg-maxed-t">\u2693 Maximum tier reached</div>' +
+        '<div class="cs-upg-maxed-s">Your ship is fully upgraded.</div>';
+      return;
+    }
+
+    host.className = "cs-upg";
+    var hasSW  = crewHasShipwright();
+    var price  = hasSW ? Math.round(info.price * (1 - SHIPWRIGHT_DISCOUNT)) : info.price;
+    var afford = canAfford();
+    var funds  = shipFunds();
+    var curCap = (C.data && C.data.rosterCap != null) ? C.data.rosterCap
+               : (NEXT_TIER[cur] ? NEXT_TIER[cur].cap : 3);
+    var newCap = info.cap;
+
+    var costHtml = hasSW
+      ? '<span class="cs-upg-was">' + berries(info.price) + '</span>' + berries(price)
+      : berries(price);
+
+    var bottom = afford
+      ? (hasSW
+          ? '<div class="cs-upg-req"><span class="ok">\u2713</span> Shipwright aboard \u2014 30% off.</div>'
+          : '<div class="cs-upg-req"><span class="hint">\u2693</span> Add a Shipwright to your crew for 30% off.</div>')
+      : '<div class="cs-upg-req"><span class="no">\u2715</span> Not enough berries' +
+          (funds != null ? ' (need ' + berries(price - funds) + ' more).' : '.') + '</div>';
+
+    var btn = '<button class="cs-upg-btn" id="cs-upg" type="button"' + (afford ? '' : ' disabled') + '>Upgrade</button>';
+
+    host.innerHTML =
+      '<div class="cs-upg-top">' +
+        '<div class="cs-upg-ic">\u2B06</div>' +
+        '<div class="cs-upg-h"><div class="cs-upg-h-l">Ship upgrade</div>' +
+          '<div class="cs-upg-h-t">' + esc(curName) + ' \u2192 ' + esc(info.name) + '</div></div>' +
+        '<div class="cs-upg-tiers"><span class="cs-tier-pill">Tier ' + cur + '</span>' +
+          '<span class="cs-upg-arrow">\u25B6</span>' +
+          '<span class="cs-tier-pill next">Tier ' + (cur + 1) + '</span></div>' +
+      '</div>' +
+      '<div class="cs-upg-gains">' +
+        '<div class="cs-upg-gain"><span class="g-ic">\uD83D\uDC65</span><b>Crew capacity</b>' +
+          '<span class="g-val">' + (curCap + 1) + ' <span class="up">\u2192 ' + (newCap + 1) + '</span></span></div>' +
+      '</div>' +
+      '<div class="cs-upg-foot">' +
+        '<div class="cs-upg-cost"><span class="cs-upg-cost-l">Cost</span>' +
+          '<span class="cs-upg-cost-v' + (afford ? '' : ' short') + '">' + costHtml + '</span></div>' +
+        btn +
+      '</div>' +
+      bottom;
+
+    var b = el("cs-upg");
+    if (b && afford) b.addEventListener("click", doUpgrade);
   }
 
   /* ====================================================================
@@ -419,6 +478,7 @@
     ov.innerHTML =
       '<div class="cs-ed-head"><button class="btn-ghost" id="cs-ed-cancel" type="button">\u2715 Cancel</button><h2>Customize ship</h2>' +
         '<div class="cs-ed-total"><span>Total</span><b id="cs-ed-total">\u0E3F 0</b></div><button class="cs-ed-finish" id="cs-ed-finish" type="button">Finish</button></div>' +
+      '<div class="cs-upg" id="cs-upg-card"></div>' +
       '<div class="cs-ed-body">' +
         '<div class="cs-view-toggle"><button class="btn-ghost" id="cs-view" type="button">\u21C5 Top view</button></div>' +
         '<div class="cs-ed-stage side" id="cs-ed-stage"></div>' +
@@ -448,7 +508,7 @@
     C.original = packShip(C.ship); C.edit = packShip(C.ship); C.edView = "side";
     el("cs-view").textContent = "\u21C5 Top view";
     el("cs-summary").classList.remove("open"); closeDrawer();
-    renderEditorShip(); refreshTotal();
+    renderEditorShip(); refreshTotal(); renderUpgradeCard();
     el("cs-editor").classList.add("open");
   }
   function toggleView(){
@@ -544,6 +604,38 @@
       ".cs-ed-head h2{margin:0;flex:1;font-weight:700;font-style:italic;letter-spacing:.04em;text-transform:uppercase;font-size:16px;color:#f3e9d6;}",
       ".cs-ed-total{text-align:right;line-height:1;}.cs-ed-total span{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#aa9c80;}.cs-ed-total b{display:block;font-weight:700;font-size:15px;color:#e9c46a;}",
       ".cs-ed-finish{cursor:pointer;font:inherit;font-weight:700;color:#2a1c05;background:#e9c46a;border:0;border-radius:10px;padding:8px 14px;}.cs-ed-finish:disabled{opacity:.6;}",
+      /* ---- upgrade-kaart (variant A) in de editor ---- */
+      ".cs-upg{margin:10px 12px 0;background:var(--parch,#f1e2be);border:2px solid var(--line,#8a5a2b);border-radius:14px;padding:12px 13px 11px;box-shadow:0 8px 22px rgba(0,0,0,.34),inset 0 0 0 2px rgba(138,90,43,.14);flex:0 0 auto;}",
+      ".cs-upg-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}",
+      ".cs-upg-ic{width:36px;height:36px;flex:0 0 auto;border-radius:10px;display:grid;place-items:center;font-size:18px;background:linear-gradient(180deg,var(--gold-hi,#f4cf6a),var(--gold,#e7b94a));border:2px solid var(--gold-d,#9a6b1e);}",
+      ".cs-upg-h{flex:1 1 auto;min-width:0;}",
+      ".cs-upg-h-l{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2,#6b4a26);}",
+      ".cs-upg-h-t{font-family:var(--display,'Bangers',cursive);font-size:17px;letter-spacing:.4px;color:var(--ink,#3a2708);line-height:1.05;}",
+      ".cs-upg-tiers{display:flex;align-items:center;gap:7px;flex:0 0 auto;}",
+      ".cs-tier-pill{font-family:var(--display,'Bangers',cursive);font-size:12px;letter-spacing:.4px;color:var(--ink-2,#6b4a26);background:var(--parch-3,#f7ecca);border:1.5px solid var(--line-soft,#b79a63);border-radius:8px;padding:2px 9px;}",
+      ".cs-tier-pill.next{color:var(--ink,#3a2708);background:#fff8e7;border-color:var(--gold-d,#9a6b1e);}",
+      ".cs-upg-arrow{color:var(--gold-d,#9a6b1e);font-size:13px;}",
+      ".cs-upg-gains{padding:9px 0 10px;margin:0 0 10px;border-top:1px solid rgba(138,90,43,.16);border-bottom:1px solid rgba(138,90,43,.16);}",
+      ".cs-upg-gain{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2,#6b4a26);}",
+      ".cs-upg-gain .g-ic{width:22px;height:22px;flex:0 0 auto;border-radius:6px;display:grid;place-items:center;font-size:12px;color:#fff;background:linear-gradient(140deg,#2e7d5b,#1f6f4a);}",
+      ".cs-upg-gain b{color:var(--ink,#3a2708);font-family:var(--display,'Bangers',cursive);font-weight:400;letter-spacing:.3px;}",
+      ".cs-upg-gain .g-val{margin-left:auto;font-family:var(--display,'Bangers',cursive);font-size:14px;color:var(--ink,#3a2708);}",
+      ".cs-upg-gain .g-val .up{color:var(--gold-d,#9a6b1e);}",
+      ".cs-upg-foot{display:flex;align-items:center;gap:12px;}",
+      ".cs-upg-cost{display:flex;flex-direction:column;min-width:0;}",
+      ".cs-upg-cost-l{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2,#6b4a26);}",
+      ".cs-upg-cost-v{font-family:var(--display,'Bangers',cursive);font-size:20px;letter-spacing:.5px;color:var(--gold-d,#9a6b1e);line-height:1;}",
+      ".cs-upg-cost-v.short{color:var(--danger,#a3331f);}",
+      ".cs-upg-was{font-size:12px;color:var(--muted,#9a7b4a);text-decoration:line-through;margin-right:5px;}",
+      ".cs-upg-btn{margin-left:auto;flex:0 0 auto;font-family:var(--display,'Bangers',cursive);font-size:16px;letter-spacing:.5px;color:var(--ink,#3a2708);background:linear-gradient(180deg,var(--gold-hi,#f4cf6a),var(--gold,#e7b94a));border:2px solid var(--gold-d,#9a6b1e);border-radius:11px;padding:10px 24px;cursor:pointer;box-shadow:0 4px 0 var(--gold-d,#9a6b1e);}",
+      ".cs-upg-btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--gold-d,#9a6b1e);}",
+      ".cs-upg-btn:disabled{filter:grayscale(.5) brightness(.97);opacity:.55;cursor:not-allowed;box-shadow:0 4px 0 var(--gold-d,#9a6b1e);}",
+      ".cs-upg-req{font-size:11px;font-style:italic;color:var(--ink-2,#6b4a26);margin-top:9px;display:flex;align-items:center;gap:6px;}",
+      ".cs-upg-req .ok{color:#1f7a4d;font-style:normal;}.cs-upg-req .no{color:var(--danger,#a3331f);font-style:normal;}.cs-upg-req .hint{color:var(--gold-d,#9a6b1e);font-style:normal;}",
+      ".cs-upg.maxed{text-align:center;}",
+      ".cs-upg-maxed-t{font-family:var(--display,'Bangers',cursive);font-size:17px;letter-spacing:.4px;color:var(--ink,#3a2708);}",
+      ".cs-upg-maxed-s{font-size:12px;color:var(--ink-2,#6b4a26);font-style:italic;margin-top:3px;}",
+      /* ---- /upgrade-kaart ---- */
       ".cs-ed-body{flex:1 1 auto;position:relative;min-height:0;display:flex;align-items:center;justify-content:center;}",
       ".cs-view-toggle{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:7;}",
       ".cs-view-toggle .btn-ghost{padding:6px 13px;font-size:12px;background:rgba(0,0,0,.3);border-radius:9px;color:#f3e9d6;}",
@@ -585,5 +677,5 @@
   }
 
   /* (resize/orientation-listeners niet meer nodig: de ResizeObserver op
-     .ship-col in setupShipFit doet de schaal; de rest is CSS.) */
+     .ship-wrap in setupShipFit doet de schaal; de rest is CSS.) */
 })();
