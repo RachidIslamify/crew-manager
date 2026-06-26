@@ -1,5 +1,5 @@
 /* ====================================================================
-   mp-fit.css  (v5) — "past altijd op het scherm"-laag voor de ONLINE
+   mp-fit.css  (v6) — "past altijd op het scherm"-laag voor de ONLINE
    competitie. ALLES gescoped op
        body[data-screen="screen-competition"] + :has(#cp-content > .cs-fit)
    zodat single-player (screen-crew/market/training) nooit geraakt wordt.
@@ -44,10 +44,14 @@ body[data-screen="screen-competition"] .cw-top{
   flex:0 0 auto; margin-bottom:8px; padding-bottom:8px;
 }
 
-/* middenstuk: dek boven, bench eronder (portret) */
+/* middenstuk: dek boven, bench eronder (portret)
+   align-items:stretch + flex-wrap:nowrap overschrijven de GLOBALE
+   .cw-main-regel uit styles.css (align-items:flex-start + flex-wrap:wrap),
+   die anders .ship-wrap op breedte/hoogte 0 liet inklappen. */
 body[data-screen="screen-competition"] .cw-main{
   flex:1 1 auto; min-height:0; margin:0;
   display:flex; flex-direction:column; gap:10px;
+  align-items:stretch; flex-wrap:nowrap;
 }
 
 /* dek-wrapper = de flex-cel; positioneer-context + container voor de lig-fit */
@@ -72,7 +76,7 @@ body[data-screen="screen-competition"] .ship-tool:hover{ background:rgba(11,37,5
    absoluut zodat height:100% oplost tegen de (flex-)wrapper. */
 body[data-screen="screen-competition"] .ship-col{
   position:absolute; top:50%; left:50%; margin:0;
-  width:auto;
+  width:auto; max-width:none;
   aspect-ratio: var(--ship-w,330) / var(--ship-h,600);
   transform: translate(-50%,-50%);
   /* hoogte wordt door mp-crew.js in px gezet (gemeten op .ship-wrap) */
@@ -111,7 +115,7 @@ body[data-screen="screen-competition"] .bench-note{ flex:0 0 auto; }
 /* ---- LIGGEND: dek ligt (boeg links, stuur rechts) + bench-rail rechts ---- */
 @media (orientation:landscape){
   body[data-screen="screen-competition"] .cw-main{
-    flex-direction:row; align-items:stretch; gap:12px;
+    flex-direction:row; align-items:stretch; flex-wrap:nowrap; gap:12px;
   }
 
   body[data-screen="screen-competition"] .ship-wrap{ flex:1 1 auto; }
