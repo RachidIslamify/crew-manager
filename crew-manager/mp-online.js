@@ -244,32 +244,7 @@
 
     // ---- top bar ----
     var html = '<div class="gh">';
-    html +=
-      '<div class="gh-top">' +
-        '<div class="gh-id">' +
-          '<div class="gh-emblem" style="background:' + colOf(crewName) + '">' + iniOf(crewName) +
-            (window.CrewCard && cap ? CrewCard.photoTag(cap) : "") + '</div>' +
-          '<div class="gh-id-main">' +
-            '<div class="gh-crew">' + esc(crewName) + '</div>' +
-            '<div class="gh-stats">' +
-              '<div class="gh-stat"><span class="gh-stat-l">Berries</span><span class="gh-stat-v">' + shortFunds(funds) + '</span></div>' +
-              '<div class="gh-stat"><span class="gh-stat-l">Crew</span><span class="gh-stat-v">' + (size + 1) + ' / ' + (capCap + 1) + '</span></div>' +
-              '<div class="gh-stat"><span class="gh-stat-l">Bounty</span><span class="gh-stat-v">' + shortFunds(bounty) + '</span></div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="gh-acts">' +
-          '<button class="gh-ic" id="gh-bag" type="button" aria-label="Inventory">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6V5a3 3 0 0 1 6 0v1"/><path d="M5 9.5C5 7.6 6.6 6 8.5 6h7C17.4 6 19 7.6 19 9.5V18a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/><path d="M5 12h14"/><path d="M12 12v3"/></svg>' +
-          '</button>' +
-          '<button class="gh-ic" id="gh-bell" type="button" aria-label="Notifications">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
-          '</button>' +
-          '<button class="gh-ic" id="gh-menu" type="button" aria-label="Menu">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>' +
-          '</button>' +
-        '</div>' +
-      '</div>';
+    html += '<div id="gh-topbar"></div>';
 
     // ---- centre block ----
     html += '<div class="gh-battle">';
@@ -362,9 +337,7 @@
       b.addEventListener("click", function (){ go(b.getAttribute("data-act")); });
     });
 
-    var bag = el("gh-bag"); if (bag) bag.addEventListener("click", function (e){ e.stopPropagation(); openBag(bag); });
-    var bell = el("gh-bell"); if (bell) bell.addEventListener("click", function (e){ e.stopPropagation(); openBell(bell); });
-    var menu = el("gh-menu"); if (menu) menu.addEventListener("click", function (e){ e.stopPropagation(); openMenu(menu); });
+    if (window.cmTopbar) window.cmTopbar.mount(el("gh-topbar"), L.id, { primary: true });
     var copy = el("gh-copy"); if (copy) copy.addEventListener("click", function (){ doCopy(lg.code); });
 
     if (active) startKickoff();
