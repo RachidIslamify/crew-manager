@@ -345,6 +345,8 @@
   /* ---------------- paint + wire ---------------- */
   function paintBody(){
     renderTabs();
+    var m = content() ? content().querySelector(".mkt2") : null;
+    if (m) m.classList.add("loaded");
     var b = el("mkt-body"); if (!b) return;
     b.classList.remove("loading");
     b.innerHTML = M.tab === "buy" ? buyBody() : M.tab === "sell" ? sellBody() : histBody();
@@ -449,7 +451,8 @@
   }
 
   var CSS = ''
-  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden; background:var(--parch); }'
+  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden; background:var(--sea-deep); }'
+  + '.mkt2.loaded{ background:var(--parch); }'
   + '.mkt2 .mkt-fbhead{ display:flex; align-items:center; gap:10px; padding:12px; background:var(--sea); color:var(--parch-3); font-family:var(--display); font-size:18px; }'
   + '.mkt2 .mkt-fbback{ background:#ffffff14; border:0; color:inherit; width:32px; height:32px; border-radius:8px; cursor:pointer; }'
   /* tabs */
