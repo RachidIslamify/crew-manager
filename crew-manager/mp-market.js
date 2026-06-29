@@ -78,7 +78,7 @@
     M.expand = null; M.tr = null; M.ask = {}; M.role = "All"; M.q = ""; M.sort = "price";
     injectCss();
     activateScreen("screen-competition");
-    content().innerHTML = '<div class="mkt2"><div id="mkt-tb"></div><div id="mkt-tabs"></div><div id="mkt-body">' + loader() + '</div></div>';
+    content().innerHTML = '<div class="mkt2"><div id="mkt-tb"></div><div id="mkt-tabs"></div><div id="mkt-body" class="loading">' + loader() + '</div></div>';
     fetchCore().then(function(){ mountTopbar(); paintBody(); })
       .catch(function(e){
         content().innerHTML = '<div class="mkt2"><div id="mkt-tb"></div><div class="wl-err" style="padding:14px">' + esc(e.message) + '</div></div>';
@@ -346,6 +346,7 @@
   function paintBody(){
     renderTabs();
     var b = el("mkt-body"); if (!b) return;
+    b.classList.remove("loading");
     b.innerHTML = M.tab === "buy" ? buyBody() : M.tab === "sell" ? sellBody() : histBody();
     wireBody();
   }
@@ -448,7 +449,7 @@
   }
 
   var CSS = ''
-  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden; background:var(--sea-deep); }'
+  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden; background:var(--parch); }'
   + '.mkt2 .mkt-fbhead{ display:flex; align-items:center; gap:10px; padding:12px; background:var(--sea); color:var(--parch-3); font-family:var(--display); font-size:18px; }'
   + '.mkt2 .mkt-fbback{ background:#ffffff14; border:0; color:inherit; width:32px; height:32px; border-radius:8px; cursor:pointer; }'
   /* tabs */
@@ -461,8 +462,10 @@
   + '.mkt2 .tab-info:hover{ background:var(--gold); border-color:var(--gold-d); color:#2a1c05; }'
   /* body */
   + '.mkt2 #mkt-tb, .mkt2 #mkt-tabs{ flex:0 0 auto; }'
+  + '.mkt2 #mkt-tb{ background:var(--sea-deep); }'
   + '.mkt2 #mkt-body{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; margin:10px 11px 12px; background:var(--parch-3); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 4px 12px -6px #0006, 0 0 0 1px #ffffff40 inset; }'
   + '.mkt2 #mkt-body::-webkit-scrollbar{ width:0; height:0; display:none; }'
+  + '.mkt2 #mkt-body.loading{ background:transparent; border:0; box-shadow:none; margin:0; display:flex; align-items:center; justify-content:center; }'
   + '.mkt2 .board{ --cols: minmax(0,1fr) 18px 18px 18px 24px 50px 54px; }'
   + '.mkt2 .board-head{ position:sticky; top:0; z-index:5; background:var(--parch-3); padding:11px 11px 7px; border-bottom:1.5px solid var(--line-soft); }'
   + '.mkt2 .hist{ padding:6px 0 4px; }'
