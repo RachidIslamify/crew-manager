@@ -14,7 +14,7 @@
    met container-queries (liggend + staand kloppen vanzelf).
 
    Depends on: Api (api.js: getMarket/getSquad/getTransfers/buyListing/
-     sellMember/cancelListing/devAdvanceDay), cmTopbar, cmInfo, cmLoader,
+     sellMember/cancelListing), cmTopbar, cmInfo, cmLoader,
      colorFor / initial / fmtShort / escapeHtml, optioneel CrewCard.
    ==================================================================== */
 
@@ -72,6 +72,13 @@
     });
   }
 
+  function fitHeight(){
+    var c = content(); var m = c ? c.querySelector(".mkt2") : null;
+    if (!m) return;
+    var top = m.getBoundingClientRect().top;
+    m.style.height = Math.max(320, window.innerHeight - top) + "px";
+  }
+
   /* ---------------- open ---------------- */
   window.cmOpenMarket = function (worldId, tab){
     M.id = worldId || M.id; M.tab = tab || "buy";
@@ -79,7 +86,12 @@
     injectCss();
     activateScreen("screen-competition");
     content().innerHTML = '<div class="mkt2"><div id="mkt-tb"></div><div id="mkt-tabs"></div><div id="mkt-body">' + loader() + '</div></div>';
-    fetchCore().then(function(){ mountTopbar(); paintBody(); })
+    fitHeight();
+    if (!window.__mktFit){ window.__mktFit = true;
+      window.addEventListener("resize", fitHeight);
+      window.addEventListener("orientationchange", function(){ setTimeout(fitHeight, 150); });
+    }
+    fetchCore().then(function(){ mountTopbar(); paintBody(); fitHeight(); })
       .catch(function(e){
         content().innerHTML = '<div class="mkt2"><div id="mkt-tb"></div><div class="wl-err" style="padding:14px">' + esc(e.message) + '</div></div>';
         mountTopbar();
@@ -145,7 +157,7 @@
   }
   function thead(priceLabel){
     return '<div class="thead"><span class="h-name">Character</span>' +
-      '<span>P</span><span>D</span><span>S</span><span>OVR</span>' +
+      '<span>P</span><span>D</span><span>S</span><span class="h-ovr">OVR</span>' +
       '<span class="h-price">' + priceLabel + '</span><span class="h-act"></span></div>';
   }
   function sellSpeed(ratio){
@@ -182,11 +194,7 @@
     var full = (mkt.crewSize||0) >= (mkt.rosterCap||13);
     var note = full ? '<div class="note warn">Your crew is full (' + (mkt.rosterCap||13) + '/' + (mkt.rosterCap||13) + ') \u2014 sell someone before you can recruit.</div>' : '';
 
-    var list;
-    if (!rows.length){
-      list = '<div class="empty">No characters match your filter.<br>Try clearing the search or role.</div>';
-    } else {
-      list = '<div class="tbl">' + thead("Price") + rows.map(function(p){
+    var rowsHtml = rows.map(function(p){
         var afford = (mkt.funds||0) >= p.price;
         var act = !afford ? '<div class="na">Not enough</div>'
                           : '<button class="btn sm" data-buy="' + esc(p.id) + '"' + (full ? " disabled" : "") + '>Buy</button>';
@@ -201,9 +209,13 @@
           '<div class="c-price' + (!afford ? " cant" : "") + '">' + priceHtml + '</div>' +
           '<div class="c-act">' + act + '</div>' + ribbon +
         '</div>';
-      }).join("") + '</div>';
-    }
-    return controlsHtml() + note + list + devBtn();
+      }).join("");
+
+    var head = '<div class="board-head">' + controlsHtml() + note + (rows.length ? thead("Price") : "") + '</div>';
+    var list = rows.length
+      ? '<div class="tbl">' + rowsHtml + '</div>'
+      : '<div class="empty">No characters match your filter.<br>Try clearing the search or role.</div>';
+    return '<div class="board">' + head + list + '</div>';
   }
 
   /* ---------------- SELL ---------------- */
@@ -223,7 +235,7 @@
     var listed = roster.filter(function(m){ return m.listingId; });
     var rest   = roster.filter(function(m){ return !m.listingId; });
 
-    var html = '<div class="tbl sell">' + thead("Value");
+    var html = '';
 
     // jouw actieve listings bovenaan
     listed.forEach(function(m){
@@ -251,8 +263,7 @@
     '</div>';
 
     if (!rest.length && !listed.length){
-      html += '</div><div class="empty">Your crew is empty \u2014 recruit members on the Buy tab.</div>';
-      return html;
+      return '<div class="board"><div class="board-head">' + thead("Value") + '</div><div class="tbl sell">' + html + '</div><div class="empty">Your crew is empty \u2014 recruit members on the Buy tab.</div></div>';
     }
 
     rest.forEach(function(m){
@@ -294,19 +305,18 @@
       }
     });
 
-    html += '</div>';
-    return html;
+    return '<div class="board"><div class="board-head">' + thead("Value") + '</div><div class="tbl sell">' + html + '</div></div>';
   }
 
   /* ---------------- HISTORY ---------------- */
   function histBody(){
-    if (!M.tr) return loader();
+    if (!M.tr) return '<div class="board"><div class="hist">' + loader() + '</div></div>';
     var rows = M.tr.transfers || [];
-    if (!rows.length) return '<div class="empty">No transfers yet \u2014 the market is just getting started.</div>';
+    if (!rows.length) return '<div class="board"><div class="hist"><div class="empty">No transfers yet \u2014 the market is just getting started.</div></div></div>';
     var meId = M.tr.myMembershipId;
     var byDay = [], map = {};
     rows.forEach(function(it){ if (!map[it.day]){ map[it.day] = []; byDay.push(it.day); } map[it.day].push(it); });
-    return byDay.map(function(day){
+    var feed = byDay.map(function(day){
       var items = map[day].map(function(it){
         var youBuy = meId && it.buyerId === meId;
         var youSell = meId && it.sellerId === meId;
@@ -320,15 +330,7 @@
       }).join("");
       return '<div class="hday">Day ' + day + '</div>' + items;
     }).join("");
-  }
-
-  /* ---------------- dev test tool ---------------- */
-  function devBtn(){ return '<button class="mkt-dev" data-dev type="button">\u23ed Advance day (test)</button>'; }
-  function devAdvance(){
-    var b = el("mkt-body") ? el("mkt-body").querySelector("[data-dev]") : null;
-    if (b){ b.disabled = true; b.textContent = "Sailing\u2026"; }
-    Api.devAdvanceDay(M.id).then(function(r){ toast("Day " + ((r && r.day) || "?")); M.tr = null; reload(); })
-      .catch(function(e){ toast(e.message); if (b){ b.disabled = false; b.textContent = "\u23ed Advance day (test)"; } });
+    return '<div class="board"><div class="hist">' + feed + '</div></div>';
   }
 
   /* ---------------- paint + wire ---------------- */
@@ -354,7 +356,6 @@
     b.querySelectorAll("[data-ask]").forEach(function(r){ r.oninput = function(){ M.ask[r.getAttribute("data-ask")] = parseInt(r.value,10)/100; livePatch(r); }; });
     b.querySelectorAll("[data-list]").forEach(function(x){ x.onclick = function(){ var id = x.getAttribute("data-list"); doList(id, M.ask[id] || 1); }; });
     b.querySelectorAll("[data-cancel]").forEach(function(x){ x.onclick = function(){ doCancel(x.getAttribute("data-cancel")); }; });
-    var d = b.querySelector("[data-dev]"); if (d) d.onclick = devAdvance;
   }
   function livePatch(r){
     var id = r.getAttribute("data-ask"); var ratio = M.ask[id] || 1;
@@ -438,7 +439,7 @@
   }
 
   var CSS = ''
-  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); }'
+  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); height:100dvh; display:flex; flex-direction:column; overflow:hidden; }'
   + '.mkt2 .mkt-fbhead{ display:flex; align-items:center; gap:10px; padding:12px; background:var(--sea); color:var(--parch-3); font-family:var(--display); font-size:18px; }'
   + '.mkt2 .mkt-fbback{ background:#ffffff14; border:0; color:inherit; width:32px; height:32px; border-radius:8px; cursor:pointer; }'
   /* tabs */
@@ -450,7 +451,12 @@
   + '.mkt2 .tab-info{ margin-left:auto; align-self:center; flex:0 0 auto; width:27px; height:27px; margin-right:2px; border-radius:50%; border:1.5px solid var(--line-soft); background:var(--parch-3); color:var(--ink-2); font-family:var(--display); font-weight:400; font-size:16px; cursor:pointer; display:grid; place-items:center; }'
   + '.mkt2 .tab-info:hover{ background:var(--gold); border-color:var(--gold-d); color:#2a1c05; }'
   /* body */
-  + '.mkt2 #mkt-body{ padding:11px 11px 20px; }'
+  + '.mkt2 #mkt-tb, .mkt2 #mkt-tabs{ flex:0 0 auto; }'
+  + '.mkt2 #mkt-body{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; padding:0 11px 16px; }'
+  + '.mkt2 #mkt-body::-webkit-scrollbar{ width:0; height:0; display:none; }'
+  + '.mkt2 .board{ --cols: minmax(0,1fr) 18px 18px 18px 24px 50px 54px; }'
+  + '.mkt2 .board-head{ position:sticky; top:0; z-index:6; margin:0 -11px; padding:11px 11px 7px; background:var(--parch); box-shadow:0 6px 8px -7px #00000066; }'
+  + '.mkt2 .hist{ padding-top:11px; }'
   + '.mkt2 .controls{ display:flex; flex-direction:column; gap:8px; margin-bottom:11px; }'
   + '.mkt2 .search{ display:flex; align-items:center; gap:8px; background:var(--parch-3); border:1.5px solid var(--line-soft); border-radius:10px; padding:8px 11px; color:var(--ink); }'
   + '.mkt2 .search svg{ flex:0 0 auto; opacity:.6; } .mkt2 .search input{ border:0; background:transparent; outline:0; width:100%; font-family:var(--body); font-size:14px; color:var(--ink); }'
@@ -464,11 +470,10 @@
   + '.mkt2 .note{ font-size:12.5px; color:var(--ink-2); background:#fff5d855; border:1px dashed var(--line-soft); border-radius:9px; padding:8px 11px; margin-bottom:11px; line-height:1.45; }'
   + '.mkt2 .note.warn{ background:#a3331f12; border-color:#a3331f55; color:#7e2a18; }'
   /* table */
-  + '.mkt2 .tbl{ display:flex; flex-direction:column; gap:5px; --cols: minmax(0,1fr) 18px 18px 18px 24px 50px 54px; }'
-  + '.mkt2 .tbl.sell{ --cols: minmax(0,1fr) 18px 18px 18px 24px 50px 54px; }'
+  + '.mkt2 .tbl{ display:flex; flex-direction:column; gap:5px; padding-top:8px; }'
   + '.mkt2 .thead{ display:grid; grid-template-columns:var(--cols); gap:4px; align-items:end; padding:2px 9px 5px; }'
-  + '.mkt2 .thead span{ font-family:var(--body); font-weight:700; font-size:9px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); text-align:center; }'
-  + '.mkt2 .thead .h-name{ text-align:left; } .mkt2 .thead .h-price{ text-align:right; }'
+  + '.mkt2 .thead span{ font-family:var(--body); font-weight:700; font-size:9px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-2); text-align:center; }'
+  + '.mkt2 .thead .h-name{ text-align:left; } .mkt2 .thead .h-price{ text-align:right; color:var(--ink); } .mkt2 .thead .h-ovr{ color:var(--gold-d); }'
   + '.mkt2 .trow{ display:grid; grid-template-columns:var(--cols); gap:4px; align-items:center; position:relative; background:linear-gradient(180deg,var(--parch-3),var(--parch-2)); border:1.5px solid var(--line-soft); border-radius:10px; padding:7px 9px; box-shadow:0 1px 0 #ffffff80 inset, 0 2px 5px -3px #0006; }'
   + '.mkt2 .trow.mine{ border-color:var(--sea-light); box-shadow:0 0 0 1px var(--sea-light) inset; }'
   + '.mkt2 .trow.locked{ opacity:.62; }'
@@ -524,12 +529,11 @@
   + '.mkt2 .hai{ font-size:9.5px; color:var(--muted); border:1px solid var(--line-soft); border-radius:4px; padding:1px 4px; vertical-align:1px; }'
   + '.mkt2 .hprice{ font-family:var(--body); font-weight:800; font-size:14px; color:var(--gold-d); white-space:nowrap; font-variant-numeric:tabular-nums; }'
   + '.mkt2 .empty{ text-align:center; color:var(--muted); padding:34px 16px; font-size:13.5px; }'
-  + '.mkt2 .mkt-dev{ display:block; margin:16px auto 0; font-family:var(--body); font-weight:700; font-size:12px; color:var(--ink-2); background:var(--parch-3); border:1.5px solid var(--line-soft); border-radius:9px; padding:8px 14px; cursor:pointer; }'
   /* breed (liggend) */
   + '@container (min-width:560px){'
   +   '.mkt2 .controls{ flex-direction:row; align-items:center; } .mkt2 .search{ flex:1; } .mkt2 .filter-sort{ flex:0 0 auto; }'
   +   '.mkt2 .chips{ flex-wrap:wrap; overflow:visible; }'
-  +   '.mkt2 .tbl{ --cols: minmax(0,1fr) 34px 34px 34px 46px 92px 96px; } .mkt2 .tbl.sell{ --cols: minmax(0,1fr) 34px 34px 34px 46px 92px 90px; }'
+  +   '.mkt2 .board{ --cols: minmax(0,1fr) 34px 34px 34px 46px 92px 96px; }'
   +   '.mkt2 .thead{ padding:2px 14px 6px; } .mkt2 .thead span{ font-size:10px; }'
   +   '.mkt2 .trow{ padding:9px 14px; gap:10px; }'
   +   '.mkt2 .c-name .av{ width:34px; height:34px; font-size:16px; } .mkt2 .c-nm{ font-size:16px; } .mkt2 .c-role{ font-size:11.5px; }'
