@@ -5,7 +5,7 @@
 
    Transfermarkt voor een online league. Sub-scherm:
      - cmTopbar in sub-modus (back -> cmOpenLeague)
-     - i-knop (cmInfo) rechts in de tab-rij
+     - i-knop (eigen popover) rechts in de tab-rij
      - 3 tabs: Buy (gedeeld bord) · Sell (jouw roster + vraagprijs) · History
      - Optimistic buy/sell/cancel: lokaal updaten + renderen, server op de
        achtergrond, rollback (reload) alleen bij fout. Geen reload-na-actie.
@@ -14,7 +14,7 @@
    met container-queries (liggend + staand kloppen vanzelf).
 
    Depends on: Api (api.js: getMarket/getSquad/getTransfers/buyListing/
-     sellMember/cancelListing), cmTopbar, cmInfo, cmLoader,
+     sellMember/cancelListing), cmTopbar, cmLoader,
      colorFor / initial / fmtShort / escapeHtml, optioneel CrewCard.
    ==================================================================== */
 
@@ -72,13 +72,6 @@
     });
   }
 
-  function fitHeight(){
-    var c = content(); var m = c ? c.querySelector(".mkt2") : null;
-    if (!m) return;
-    var top = m.getBoundingClientRect().top;
-    m.style.height = Math.max(320, window.innerHeight - top) + "px";
-  }
-
   /* ---------------- open ---------------- */
   window.cmOpenMarket = function (worldId, tab){
     M.id = worldId || M.id; M.tab = tab || "buy";
@@ -86,12 +79,7 @@
     injectCss();
     activateScreen("screen-competition");
     content().innerHTML = '<div class="mkt2"><div id="mkt-tb"></div><div id="mkt-tabs"></div><div id="mkt-body">' + loader() + '</div></div>';
-    fitHeight();
-    if (!window.__mktFit){ window.__mktFit = true;
-      window.addEventListener("resize", fitHeight);
-      window.addEventListener("orientationchange", function(){ setTimeout(fitHeight, 150); });
-    }
-    fetchCore().then(function(){ mountTopbar(); paintBody(); fitHeight(); })
+    fetchCore().then(function(){ mountTopbar(); paintBody(); })
       .catch(function(e){
         content().innerHTML = '<div class="mkt2"><div id="mkt-tb"></div><div class="wl-err" style="padding:14px">' + esc(e.message) + '</div></div>';
         mountTopbar();
@@ -128,7 +116,7 @@
       '<button class="tab-info" data-info type="button" aria-label="How the market works">i</button>' +
       '</div>';
     t.querySelectorAll("[data-tab]").forEach(function(b){ b.onclick = function(){ setTab(b.getAttribute("data-tab")); }; });
-    var ib = t.querySelector("[data-info]"); if (ib) ib.onclick = openInfo;
+    var ib = t.querySelector("[data-info]"); if (ib) ib.onclick = function(){ openInfo(ib); };
   }
   function setTab(tab){
     M.tab = tab;
@@ -141,13 +129,34 @@
     paintBody();
   }
 
-  function openInfo(){
-    var html =
-      '<p>One shared market for your league. <b>Free agents</b> have no crew; <b>listed</b> characters show which crew is selling them \u2014 real or AI.</p>' +
-      '<p>New faces rotate on and off every day. A name that leaves the board returns a few days later, stronger.</p>' +
-      '<p>Selling? Set your asking price. Lower sells fast; higher may sit unsold. Your listed crew keep playing until someone buys them.</p>';
-    if (window.cmInfo && cmInfo.show) cmInfo.show({ title: "How the market works", html: html });
-    else toast("One shared league market \u2014 buy, sell with an asking price, and watch the transfer history.");
+  function openInfo(btn){
+    var app = content() ? content().querySelector(".mkt2") : null;
+    if (!app) return;
+    var ex = app.querySelector(".info-pop");
+    if (ex){ ex.remove(); return; }   // toggle dicht
+    var pop = document.createElement("div"); pop.className = "info-pop";
+    pop.innerHTML = '<div class="info-pop-arrow"></div>' +
+      '<div class="info-pop-h">How the market works<button class="info-pop-x" type="button" aria-label="Close">\u00d7</button></div>' +
+      '<div class="info-pop-b">' +
+        '<p>One shared market for your league. <b>Free agents</b> have no crew; <b>listed</b> characters show which crew is selling them \u2014 real or AI.</p>' +
+        '<p>New faces rotate on and off every day. A name that leaves the board returns a few days later, stronger.</p>' +
+        '<p>Selling? Set your asking price. Lower sells fast; higher may sit unsold. Your listed crew keep playing until someone buys them.</p>' +
+      '</div>';
+    app.appendChild(pop);
+
+    var br = btn.getBoundingClientRect(), ar = app.getBoundingClientRect();
+    var rightGap = Math.max(8, ar.right - br.right - 2);
+    pop.style.top = (br.bottom - ar.top + 8) + "px";
+    pop.style.right = rightGap + "px";
+    var arrow = pop.querySelector(".info-pop-arrow");
+    arrow.style.right = Math.max(8, (ar.right - rightGap) - (br.left + br.width / 2) - 6) + "px";
+
+    function close(){ if (pop.parentNode) pop.remove(); document.removeEventListener("keydown", onKey); document.removeEventListener("click", onDoc, true); }
+    function onKey(e){ if (e.key === "Escape") close(); }
+    function onDoc(e){ if (!pop.contains(e.target) && e.target !== btn) close(); }
+    pop.querySelector(".info-pop-x").onclick = close;
+    document.addEventListener("keydown", onKey);
+    setTimeout(function(){ document.addEventListener("click", onDoc, true); }, 0);
   }
 
   /* ---------------- shared table bits ---------------- */
@@ -204,10 +213,10 @@
         var ribbon = p.onSale ? '<span class="ribbon sale">Sale</span>' : (isNew ? '<span class="ribbon new">New</span>' : '');
         var priceHtml = (p.onSale && p.value ? '<span class="was">' + ber(p.value) + '</span>' : '') + '<span class="b">' + BSY + '</span>' + fmtN(p.price);
         return '<div class="trow">' +
-          '<div class="c-name">' + av(p.name) + '<div class="c-meta"><div class="c-nm">' + esc(p.name) + '</div><div class="c-role">' + sub + '</div></div></div>' +
+          '<div class="c-name">' + av(p.name) + ribbon + '<div class="c-meta"><div class="c-nm">' + esc(p.name) + '</div><div class="c-role">' + sub + '</div></div></div>' +
           cells(p) +
           '<div class="c-price' + (!afford ? " cant" : "") + '">' + priceHtml + '</div>' +
-          '<div class="c-act">' + act + '</div>' + ribbon +
+          '<div class="c-act">' + act + '</div>' +
         '</div>';
       }).join("");
 
@@ -439,7 +448,7 @@
   }
 
   var CSS = ''
-  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); height:100dvh; display:flex; flex-direction:column; overflow:hidden; }'
+  + '.mkt2{ container-type:inline-size; font-family:var(--body); color:var(--ink); position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden; background:var(--sea-deep); }'
   + '.mkt2 .mkt-fbhead{ display:flex; align-items:center; gap:10px; padding:12px; background:var(--sea); color:var(--parch-3); font-family:var(--display); font-size:18px; }'
   + '.mkt2 .mkt-fbback{ background:#ffffff14; border:0; color:inherit; width:32px; height:32px; border-radius:8px; cursor:pointer; }'
   /* tabs */
@@ -452,11 +461,11 @@
   + '.mkt2 .tab-info:hover{ background:var(--gold); border-color:var(--gold-d); color:#2a1c05; }'
   /* body */
   + '.mkt2 #mkt-tb, .mkt2 #mkt-tabs{ flex:0 0 auto; }'
-  + '.mkt2 #mkt-body{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; padding:0 11px 16px; }'
+  + '.mkt2 #mkt-body{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; margin:10px 11px 12px; background:var(--parch-3); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 4px 12px -6px #0006, 0 0 0 1px #ffffff40 inset; }'
   + '.mkt2 #mkt-body::-webkit-scrollbar{ width:0; height:0; display:none; }'
   + '.mkt2 .board{ --cols: minmax(0,1fr) 18px 18px 18px 24px 50px 54px; }'
-  + '.mkt2 .board-head{ position:sticky; top:0; z-index:6; margin:0 -11px; padding:11px 11px 7px; background:var(--parch); box-shadow:0 6px 8px -7px #00000066; }'
-  + '.mkt2 .hist{ padding-top:11px; }'
+  + '.mkt2 .board-head{ position:sticky; top:0; z-index:5; background:var(--parch-3); padding:11px 11px 7px; border-bottom:1.5px solid var(--line-soft); }'
+  + '.mkt2 .hist{ padding:6px 0 4px; }'
   + '.mkt2 .controls{ display:flex; flex-direction:column; gap:8px; margin-bottom:11px; }'
   + '.mkt2 .search{ display:flex; align-items:center; gap:8px; background:var(--parch-3); border:1.5px solid var(--line-soft); border-radius:10px; padding:8px 11px; color:var(--ink); }'
   + '.mkt2 .search svg{ flex:0 0 auto; opacity:.6; } .mkt2 .search input{ border:0; background:transparent; outline:0; width:100%; font-family:var(--body); font-size:14px; color:var(--ink); }'
@@ -470,16 +479,17 @@
   + '.mkt2 .note{ font-size:12.5px; color:var(--ink-2); background:#fff5d855; border:1px dashed var(--line-soft); border-radius:9px; padding:8px 11px; margin-bottom:11px; line-height:1.45; }'
   + '.mkt2 .note.warn{ background:#a3331f12; border-color:#a3331f55; color:#7e2a18; }'
   /* table */
-  + '.mkt2 .tbl{ display:flex; flex-direction:column; gap:5px; padding-top:8px; }'
+  + '.mkt2 .tbl{ display:flex; flex-direction:column; }'
   + '.mkt2 .thead{ display:grid; grid-template-columns:var(--cols); gap:4px; align-items:end; padding:2px 9px 5px; }'
   + '.mkt2 .thead span{ font-family:var(--body); font-weight:700; font-size:9px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-2); text-align:center; }'
   + '.mkt2 .thead .h-name{ text-align:left; } .mkt2 .thead .h-price{ text-align:right; color:var(--ink); } .mkt2 .thead .h-ovr{ color:var(--gold-d); }'
-  + '.mkt2 .trow{ display:grid; grid-template-columns:var(--cols); gap:4px; align-items:center; position:relative; background:linear-gradient(180deg,var(--parch-3),var(--parch-2)); border:1.5px solid var(--line-soft); border-radius:10px; padding:7px 9px; box-shadow:0 1px 0 #ffffff80 inset, 0 2px 5px -3px #0006; }'
-  + '.mkt2 .trow.mine{ border-color:var(--sea-light); box-shadow:0 0 0 1px var(--sea-light) inset; }'
-  + '.mkt2 .trow.locked{ opacity:.62; }'
-  + '.mkt2 .trow.open{ border-color:var(--sea-light); border-bottom-left-radius:0; border-bottom-right-radius:0; box-shadow:0 0 0 1px var(--sea-light) inset; }'
-  + '.mkt2 .c-name{ display:flex; align-items:center; gap:8px; min-width:0; }'
-  + '.mkt2 .c-name .av{ width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-family:var(--display); font-size:14px; color:#11202a; position:relative; box-shadow:0 0 0 2px #00000022,0 0 0 3px #ffffff70; overflow:hidden; }'
+  + '.mkt2 .trow{ display:grid; grid-template-columns:var(--cols); gap:4px; align-items:center; position:relative; background:transparent; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; padding:8px 11px; }'
+  + '.mkt2 .trow:last-child{ border-bottom:0; }'
+  + '.mkt2 .trow.mine{ background:#1d68860f; box-shadow:inset 3px 0 0 var(--sea-light); }'
+  + '.mkt2 .trow.locked{ opacity:.6; }'
+  + '.mkt2 .trow.open{ background:#1d68860f; border-bottom-color:transparent; }'
+  + '.mkt2 .c-name{ display:flex; align-items:center; gap:8px; min-width:0; position:relative; }'
+  + '.mkt2 .c-name .av{ width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-family:var(--display); font-size:14px; color:#11202a; position:relative; box-shadow:0 0 0 2px #00000022,0 0 0 3px #ffffff70; overflow:hidden; }'
   + '.mkt2 .c-meta{ min-width:0; }'
   + '.mkt2 .c-nm{ font-family:var(--display); font-weight:400; letter-spacing:.3px; font-size:15px; line-height:1.05; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }'
   + '.mkt2 .c-role{ font-size:10.5px; color:var(--ink-2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }'
@@ -503,10 +513,10 @@
   + '.mkt2 .btn.sm{ width:100%; padding:6px 1px; font-size:12px; }'
   + '.mkt2 .c-act .btn.ghost.sm{ font-size:12px; }'
   /* ribbon */
-  + '.mkt2 .ribbon{ position:absolute; top:-8px; right:10px; z-index:3; font-family:var(--body); font-weight:800; font-size:9px; letter-spacing:.6px; text-transform:uppercase; color:#fff; padding:2px 8px; border-radius:6px; line-height:1.35; box-shadow:0 3px 5px -2px #0008, 0 0 0 1.5px #ffffff55 inset; }'
+  + '.mkt2 .ribbon{ position:absolute; top:-7px; left:-6px; z-index:3; transform:rotate(-8deg); font-family:var(--body); font-weight:800; font-size:8.5px; letter-spacing:.4px; text-transform:uppercase; color:#fff; padding:1px 6px; border-radius:5px; line-height:1.3; box-shadow:0 2px 4px -1px #0008, 0 0 0 1.5px #ffffff55 inset; }'
   + '.mkt2 .ribbon.sale{ background:linear-gradient(180deg,#c1452f,var(--danger)); } .mkt2 .ribbon.new{ background:linear-gradient(180deg,#2f8fc1,var(--sea-light)); }'
   /* sell panel */
-  + '.mkt2 .sellpanel{ margin-top:-5px; background:linear-gradient(180deg,var(--parch-2),var(--parch)); border:1.5px solid var(--sea-light); border-top:0; border-radius:0 0 11px 11px; padding:11px 13px 13px; }'
+  + '.mkt2 .sellpanel{ margin-top:0; background:#1d68860f; border:0; border-bottom:1px solid var(--line-soft); box-shadow:inset 3px 0 0 var(--sea-light); padding:4px 13px 13px; }'
   + '.mkt2 .ask-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:9px; }'
   + '.mkt2 .ask-top .lab{ font-size:12px; color:var(--ink-2); } .mkt2 .ask-top .pct{ font-size:11px; color:var(--muted); margin-left:5px; }'
   + '.mkt2 .ask-top .amt{ font-family:var(--display); font-size:22px; color:var(--ink); } .mkt2 .ask-top .amt .b{ color:var(--gold-d); }'
@@ -521,21 +531,31 @@
   + '.mkt2 .sell-actions{ display:flex; gap:8px; margin-top:11px; } .mkt2 .sell-actions .btn{ flex:1; width:auto; padding:7px 10px; font-size:15px; }'
   + '.mkt2 .listed-meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11.5px; color:var(--sea); padding:5px 12px 3px; margin-top:-3px; }'
   /* history */
-  + '.mkt2 .hday{ font-family:var(--display); font-weight:400; letter-spacing:.4px; color:var(--ink); font-size:15px; margin:13px 4px 7px; }'
-  + '.mkt2 .hday:first-child{ margin-top:2px; }'
-  + '.mkt2 .hrow{ display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:center; background:var(--parch-3); border:1px solid var(--line-soft); border-radius:10px; padding:7px 10px; margin-bottom:6px; }'
+  + '.mkt2 .hday{ font-family:var(--display); font-weight:400; letter-spacing:.4px; color:var(--ink-2); font-size:14px; margin:11px 11px 4px; }'
+  + '.mkt2 .hday:first-child{ margin-top:4px; }'
+  + '.mkt2 .hrow{ display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:center; background:transparent; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; padding:8px 11px; }'
+  + '.mkt2 .hrow:last-child{ border-bottom:0; }'
   + '.mkt2 .hrow .dot{ width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-family:var(--display); font-size:15px; color:#11202a; }'
   + '.mkt2 .htxt{ font-size:12.5px; line-height:1.4; color:var(--ink); } .mkt2 .htxt .arrow{ color:var(--muted); margin:0 3px; }'
   + '.mkt2 .hai{ font-size:9.5px; color:var(--muted); border:1px solid var(--line-soft); border-radius:4px; padding:1px 4px; vertical-align:1px; }'
   + '.mkt2 .hprice{ font-family:var(--body); font-weight:800; font-size:14px; color:var(--gold-d); white-space:nowrap; font-variant-numeric:tabular-nums; }'
   + '.mkt2 .empty{ text-align:center; color:var(--muted); padding:34px 16px; font-size:13.5px; }'
+  /* info popover (komt direct uit de i-knop) */
+  + '.mkt2 .info-pop{ position:absolute; z-index:40; width:250px; max-width:84%; background:var(--parch-3); border:1.5px solid var(--line); border-radius:12px; box-shadow:0 16px 34px -12px #000b; animation:mktpop .12s ease-out; }'
+  + '@keyframes mktpop{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }'
+  + '.mkt2 .info-pop-arrow{ position:absolute; top:-7px; width:12px; height:12px; background:var(--parch-3); border-left:1.5px solid var(--line); border-top:1.5px solid var(--line); transform:rotate(45deg); }'
+  + '.mkt2 .info-pop-h{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--display); font-weight:400; letter-spacing:.3px; font-size:15px; color:var(--ink); padding:9px 11px 5px; }'
+  + '.mkt2 .info-pop-x{ appearance:none; border:0; background:#00000010; color:var(--ink-2); width:22px; height:22px; border-radius:6px; cursor:pointer; font-size:15px; line-height:1; }'
+  + '.mkt2 .info-pop-x:hover{ background:#0000001f; }'
+  + '.mkt2 .info-pop-b{ font-size:12px; line-height:1.45; color:var(--ink); padding:0 11px 11px; }'
+  + '.mkt2 .info-pop-b p{ margin:0 0 7px; } .mkt2 .info-pop-b p:last-child{ margin:0; } .mkt2 .info-pop-b b{ color:var(--ink); }'
   /* breed (liggend) */
   + '@container (min-width:560px){'
   +   '.mkt2 .controls{ flex-direction:row; align-items:center; } .mkt2 .search{ flex:1; } .mkt2 .filter-sort{ flex:0 0 auto; }'
   +   '.mkt2 .chips{ flex-wrap:wrap; overflow:visible; }'
   +   '.mkt2 .board{ --cols: minmax(0,1fr) 34px 34px 34px 46px 92px 96px; }'
-  +   '.mkt2 .thead{ padding:2px 14px 6px; } .mkt2 .thead span{ font-size:10px; }'
-  +   '.mkt2 .trow{ padding:9px 14px; gap:10px; }'
+  +   '.mkt2 .board-head{ padding:12px 14px 7px; } .mkt2 .thead{ padding:2px 14px 6px; } .mkt2 .thead span{ font-size:10px; }'
+  +   '.mkt2 .trow{ padding:10px 14px; gap:10px; }'
   +   '.mkt2 .c-name .av{ width:34px; height:34px; font-size:16px; } .mkt2 .c-nm{ font-size:16px; } .mkt2 .c-role{ font-size:11.5px; }'
   +   '.mkt2 .c-stat{ font-size:14px; } .mkt2 .c-ovr{ font-size:19px; } .mkt2 .c-price{ font-size:14.5px; }'
   +   '.mkt2 .btn.sm{ font-size:13px; padding:6px 2px; }'
