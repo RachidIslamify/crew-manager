@@ -124,6 +124,7 @@ const PIRATES = [
   { n:"Brook",             r:"Musician",  p:6, d:5, s:8, c:"Straw Hat Pirates", sp:["Soul Solid","Chills of the Underworld"] },
   { n:"Black Maria",       r:"Musician",  p:6, d:6, s:6, c:"Beasts Pirates",    sp:["Wanyudo"] },
   { n:"Rockstar",          r:"Musician",  p:5, d:5, s:6, c:"Red Hair Pirates",  sp:[] },
+  { n:"Yorki",             r:"Musician",  p:5, d:5, s:6, c:"Rumbar Pirates",  sp:[] },
   { n:"Bonk Punch",        r:"Musician",  p:6, d:6, s:6, c:"Red Hair Pirates",  sp:[] },
   { n:"Uta",               r:"Musician",  p:7, d:5, s:6, c:"Free Agent", sp:[] },
   { n:"Scratch Man Apoo",  r:"Musician",  p:6, d:6, s:6, c:"Free Agent", sp:[] },

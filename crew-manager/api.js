@@ -88,7 +88,9 @@ const Api = {
   // ---- Multiplayer: transfer market + crew ----
   getMarket(id){ return apiFetch("/api/online/leagues/" + id + "/market"); },
   buyListing(id, listingId){ return apiFetch("/api/online/leagues/" + id + "/market/buy", { method: "POST", body: JSON.stringify({ listingId: listingId }) }); },
-  sellMember(id, squadMemberId){ return apiFetch("/api/online/leagues/" + id + "/market/sell", { method: "POST", body: JSON.stringify({ squadMemberId: squadMemberId }) }); },
+  sellMember(id, squadMemberId, askRatio){ return apiFetch("/api/online/leagues/" + id + "/market/sell", { method: "POST", body: JSON.stringify({ squadMemberId: squadMemberId, askRatio: askRatio }) }); },
+  cancelListing(id, listingId){ return apiFetch("/api/online/leagues/" + id + "/market/cancel", { method: "POST", body: JSON.stringify({ listingId: listingId }) }); },
+  getTransfers(id){ return apiFetch("/api/online/leagues/" + id + "/transfers"); },
   getSquad(id){ return apiFetch("/api/online/leagues/" + id + "/squad"); },
   devAdvanceDay(id){ return apiFetch("/api/online/leagues/" + id + "/dev-advance", { method: "POST" }); },
   advanceWorld(id){ return apiFetch("/api/online/leagues/" + id + "/advance", { method: "POST" }); },

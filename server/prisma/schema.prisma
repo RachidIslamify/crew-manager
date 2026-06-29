@@ -73,6 +73,7 @@ model World {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   listings    MarketListing[]
+  transfers   Transfer[]
   bracket   Json?
 
   memberships   WorldMembership[]
@@ -166,6 +167,8 @@ model SquadMember {
   altRoles    String[]  @default([])
   isGeneric   Boolean   @default(false)
   boughtDay   Int?
+  listingId   String?
+
 
   membership   WorldMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
 
@@ -198,6 +201,10 @@ model MarketListing {
   tenure       Int      @default(3)
   saleAt       Int?
   saleDiscount Float    @default(0)
+  sellerId       String?
+  sellerIsBot    Boolean   @default(false)
+  squadMemberId  String?
+  askRatio       Float?
   createdAt    DateTime @default(now())
 
   @@index([worldId])
@@ -249,4 +256,23 @@ model InventoryItem {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Transfer {
+  id          String   @id @default(cuid())
+  worldId     String
+  world       World    @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  day         Int
+  name        String
+  role        String
+  buyerId     String?
+  buyerName   String
+  buyerIsBot  Boolean  @default(false)
+  sellerId    String?            // null = systeem/free agent
+  sellerName  String?
+  sellerIsBot Boolean  @default(false)
+  price       Int
+  createdAt   DateTime @default(now())
+
+  @@index([worldId, day])
 }
