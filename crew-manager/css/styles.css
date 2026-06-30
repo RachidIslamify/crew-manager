@@ -1070,19 +1070,38 @@ body{ min-height:100dvh; }
 }
 
 /* ====================================================================
-   Battle — responsive verticale vulling + topbalk-afkapping  (v17)
-   Fix 1: op normale/hoge schermen stond alles bovenaan met een grote
-          lege ruimte eronder. Nu: topbalk boven, stage verticaal
-          gecentreerd, knoppen onderaan -> scherm netjes gevuld.
-   Fix 2: lange crewnamen kapten niet af en duwden het embleem uit beeld.
-   Geldt voor single-player EN multiplayer (gedeelde .bt-* classes).
-   Korte landscape (max-height:600) houdt z'n eigen compacte layout.
+   styles.css — battle: dode code eruit + responsive fix  (v17)
+   3 kleine zoek/vervang-edits + 1 toe te voegen blok. Geen dubbele
+   selectors: de naam-afkapping gaat IN de bestaande .bt-nm regel.
    ==================================================================== */
 
-/* Fix 2 — lange namen afkappen i.p.v. het embleem weg te duwen */
-.bt-nm{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-/* Fix 1 — alleen op normale/hoge schermen (korte landscape blijft ongemoeid) */
+/* ---- EDIT 1 — verwijder de dode klok-CSS (frame gebruikt .bt-live, niet .bt-clock) ----
+   ZOEK deze twee regels (in het "Battle broadcast (v9)" blok) en VERWIJDER ze: */
+
+.bt-clock{ flex:0 0 auto; background:#0d2f40; border:2px solid #e7b94a; border-radius:12px; padding:6px 14px;
+           font-family:var(--display); font-size:30px; color:#e7b94a; min-width:78px; text-align:center; box-shadow:0 0 14px rgba(231,185,74,.25); }
+.bt-min-mark{ font-size:18px; margin-left:1px; }
+
+
+/* ---- EDIT 2 — vouw de naam-afkapping IN de bestaande .bt-nm (geen tweede regel) ----
+   ZOEK: */
+.bt-nm{ font-family:var(--display); font-size:20px; color:var(--parch); text-shadow:0 2px 0 rgba(0,0,0,.3); line-height:1.05; }
+/* VERVANG door: */
+.bt-nm{ font-family:var(--display); font-size:20px; color:var(--parch); text-shadow:0 2px 0 rgba(0,0,0,.3); line-height:1.05;
+        min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+
+/* ---- EDIT 3 — haal de dode .bt-clock uit de mobiele media-query ----
+   ZOEK: */
+@media (max-width:560px){ .bt-nm{ font-size:16px; } .bt-line{ font-size:18px; } .bt-clock{ font-size:24px; min-width:64px; } }
+/* VERVANG door: */
+@media (max-width:560px){ .bt-nm{ font-size:16px; } .bt-line{ font-size:18px; } }
+
+
+/* ---- EDIT 4 — voeg dit blok toe, direct ONDER de regel  #bt-speed.on{ ... } ---- */
+
+/* battle: verticale vulling op normale/hoge schermen (korte landscape blijft ongemoeid) */
 @media (min-height:601px){
   body[data-screen="screen-battle"] .app{
     display:flex; flex-direction:column; min-height:100dvh;
